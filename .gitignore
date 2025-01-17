@@ -1,0 +1,16 @@
+# IDE and Editor Files
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Secrets and Certificates
+*.pem
+*.key
+*.crt
+credentials.json
+
+# Temporary and Cache Files
+__pycache__/
+*.pyc
+.cache/ 
