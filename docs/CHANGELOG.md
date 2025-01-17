@@ -1,5 +1,20 @@
 # Changelog
 
+20250117: Initial Hardware Validation
+- Completed PIR sensor testing:
+  - Verified 0V/3.3V output levels
+  - Confirmed 2.5s block time behavior
+  - Documented signal characteristics
+- Power system validation:
+  - Tested ESP32 USB-C power
+  - Verified 5V output capability
+  - Documented power budget analysis
+- Documentation updates:
+  - Located and archived ESP32-S3 documentation
+  - Added detailed PIR test results
+  - Consolidated power management documentation
+  - Organized reference materials
+
 20250117: Hardware Specification Updates
 - Verified HC-SR501 PIR sensor capabilities
 - Removed temperature sensing feature (not supported by hardware)

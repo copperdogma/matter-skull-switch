@@ -37,3 +37,4 @@ Specific Rules:
 - If I say "todo: [explanation of todo item]", create a new todo item in todo.md in the appropriate section, and feel free to rewrord it for clarity.
 - If I say "record that" or "document that", update the design.md and/or todo.md as appropriate with the new information.
 - If I ask about our next priority, check spec.md first to ansure all outstanding questions are resolved. Next check todo.md.
+- If I say "create a milestone," gather up any completed todos and add them to the new milestone.

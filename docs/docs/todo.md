@@ -1,0 +1,5 @@
+- [ ] Basic Hardware Validation:
+  - [x] Power up ESP32 via USB-C
+  - [x] Test 5V output capability
+  - [x] Basic PIR sensor functionality check (Verified 0V/3.3V output, 2.5s block time)
+  - [ ] GPIO input test with PIR 

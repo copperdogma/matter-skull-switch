@@ -14,10 +14,15 @@
   - [x] Verify operating parameters and limits
   - [x] Confirm no temperature sensing capability
   - [x] Update design documentation with verified specs
+- [ ] Obtain and document Freenove ESP32-S3 WROOM specifications:
+  - [x] Locate official pinout diagram and documentation (GitHub: Freenove/Freenove_ESP32_S3_WROOM_Board)
+  - [ ] Download technical documentation/datasheet
+  - [ ] Verify GPIO capabilities and pin functions
+  - [ ] Document power pin locations
 - [ ] Basic Hardware Validation:
-  - [ ] Power up ESP32 via USB-C
-  - [ ] Test 5V output capability
-  - [ ] Basic PIR sensor functionality check
+  - [x] Power up ESP32 via USB-C
+  - [x] Test 5V output capability
+  - [x] Basic PIR sensor functionality check (Verified 0V/3.3V output, 2.5s block time)
   - [ ] GPIO input test with PIR
 - [ ] Development Environment Setup:
   - [ ] Install ESP-IDF v5.1 or newer

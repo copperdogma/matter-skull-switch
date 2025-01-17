@@ -21,6 +21,21 @@ This document details the technical implementation of the ESP32 Matter Occupancy
   - ~120° detection angle
   - Optimized mounting for coverage
   - Powered directly from ESP32's 5V pin
+  - Initial Test Results (20250117):
+    - Configuration:
+      - Sensitivity: Medium (potentiometer at middle position)
+      - Time delay: Minimum (fully counter-clockwise)
+      - Trigger mode: 'H' for repeatable triggers
+    - Signal Characteristics:
+      - Baseline: 0V (no motion)
+      - Trigger: Clean 3.3V spike on motion detection
+      - Duration: 1-2 seconds per trigger
+      - Block time: ~2.5s between triggers (built-in lockout period)
+    - Validation:
+      - Output voltage compatible with ESP32 GPIO (3.3V)
+      - Clean signal transitions with minimal noise
+      - Consistent triggering behavior
+      - Built-in debouncing via block time
 - Power Management
   - USB-C power input (5V)
   - Direct 5V to PIR sensor
@@ -86,6 +101,11 @@ This document details the technical implementation of the ESP32 Matter Occupancy
 
 ## Technical References
 ### ESP32 Development
+- [Freenove ESP32-S3 WROOM Board Documentation](https://github.com/Freenove/Freenove_ESP32_S3_WROOM_Board/tree/main/Datasheet)
+  - Official manufacturer repository
+  - Contains pinout diagrams
+  - Technical specifications
+  - Last accessed: 20250117
 - [ESP32 Motion Sensor Tutorial](https://esp32io.com/tutorials/esp32-motion-sensor)
   - HC-SR501 implementation
   - GPIO configuration
@@ -210,19 +230,37 @@ Selected Configuration:
 - Industry forum discussions
 - Energy code requirements 
 
-## Power Management Simplification
+# Power Management
 
-### Analysis
-- HC-SR501 PIR Requirements:
-  - Operating Voltage: DC 4.5V-20V
-  - Power Consumption: <65μA
-  - Digital Output: 3.3V/0V logic levels
-- ESP32-S3 Capabilities:
-  - 5V output available from USB power input
-  - 3.3V regulated output for logic
-  - Sufficient current capacity for PIR sensor
+20250117: Created by Cam Marsollier with Claude Sonnet 3.5 to document power analysis and design decisions
 
-### Design Decision
+## Requirements Analysis
+### HC-SR501 PIR Requirements:
+- Operating Voltage: DC 4.5V-20V
+- Power Consumption: <65μA
+- Digital Output: 3.3V/0V logic levels
+
+### ESP32-S3 Power Specifications:
+- USB-C input: 5V @ 500mA maximum (2.5W)
+- Core Components:
+  - CPU at full load: ~200mA
+  - Wi-Fi active: ~100-120mA
+  - Matter stack overhead: Minimal beyond Wi-Fi usage
+  Total ESP32 consumption: ~320mA
+
+## Power Budget
+### System Power Consumption:
+1. ESP32-S3 Core: ~320mA
+2. HC-SR501 PIR: ~60mA
+   - Active current: 50-60mA
+   - Quiescent current: <50μA
+
+### Total System Analysis:
+- Combined worst-case consumption: ~380mA
+- Available headroom: ~120mA
+- Percentage of maximum: 76% utilization
+
+## Design Decision
 Selected Configuration:
 - Direct 5V power from ESP32 to PIR sensor
 - Remove separate USB-C PD trigger board
@@ -236,16 +274,17 @@ Selected Configuration:
    - Cost reduction
 
 2. Power Requirements:
-   - PIR's 65μA draw well within ESP32's capacity
-   - 5V from USB meets PIR's voltage needs
+   - System well within USB-C power specifications
+   - Adequate headroom for power fluctuations
    - No additional regulation needed
+   - PIR's draw well within ESP32's capacity
 
 3. Reliability:
    - Direct power connection reduces noise
    - USB power typically very stable
    - Fewer components to fail
 
-### References
+## References
 - HC-SR501 Datasheet (v1.2): https://www.mpja.com/download/31227sc.pdf
   - Last accessed: 20250117
   - Key specs: Operating voltage, power consumption, output levels
@@ -256,7 +295,7 @@ Selected Configuration:
 - ESP32 Hardware Design Guidelines: https://www.espressif.com/sites/default/files/documentation/esp32_hardware_design_guidelines_en.pdf
   - Version: 3.0
   - Last accessed: 20250117
-  - Key sections: Power Supply Design 
+  - Key sections: Power Supply Design
 
 ## Project Structure
 
@@ -293,3 +332,35 @@ esp32-matter-occupancy/              # Root directory (GitHub repository)
 - The `references/` directory is git-ignored and used for downloaded specifications, research materials, and reference implementations
 - Each workspace has its own `.cursorrules` file for specialized Cursor configuration
 - Common assets like diagrams and images are stored in `docs/assets/` and version controlled 
+
+# Power Analysis
+
+## Power Budget Calculations
+
+### Power Supply
+- USB-C input: 5V @ 500mA maximum (2.5W)
+
+### Power Consumption Breakdown
+1. ESP32-S3 Core Components:
+   - CPU at full load: ~200mA
+   - Wi-Fi active: ~100-120mA
+   - Matter stack overhead: Minimal beyond Wi-Fi usage
+   Total ESP32 consumption: ~320mA
+
+2. HC-SR501 PIR Sensor:
+   - Operating voltage: 5V DC
+   - Active current draw: 50-60mA
+   - Quiescent current: <50μA
+   Total PIR consumption: ~60mA
+
+### Total System Power
+- Combined worst-case consumption: ~380mA
+- Available headroom: ~120mA
+- Percentage of maximum: 76% utilization
+
+### Conclusions
+- System is well within USB-C power specifications
+- Adequate headroom exists for power fluctuations
+- No additional power supply or regulation needed
+- PIR sensor can be powered directly from ESP32's 5V output
+- Matter stack adds minimal overhead to existing Wi-Fi power usage 
