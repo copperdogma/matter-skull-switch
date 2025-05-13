@@ -1,5 +1,17 @@
 # Changelog
 
+20250509: Initial Matter Setup
+- Set up computer environment:
+  brew install cmake ninja dfu-util
+  python --version (shows me running 3.11.5 which is >=3 which is ok)
+  brew install ccache
+- Followed SETUP.md instructions to the letter.
+  [2025-05-10 01:18:38,873] [   INFO] - Generated QR code: MT:Y.K90MBW17GU0Y7RD00
+  [2025-05-10 01:18:38,873] [   INFO] - Generated manual code: 3321-531-0437
+  [2025-05-10 01:18:38,882] [   INFO] - Generated onboarding data and QR Code
+
+
+
 20250117: Initial Hardware Validation
 - Completed PIR sensor testing:
   - Verified 0V/3.3V output levels
@@ -17,7 +29,6 @@
 
 20250117: Hardware Specification Updates
 - Verified HC-SR501 PIR sensor capabilities
-- Removed temperature sensing feature (not supported by hardware)
 - Updated documentation to reflect hardware capabilities
 
 20250116: Initial Project Setup

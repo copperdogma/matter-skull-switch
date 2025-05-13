@@ -248,17 +248,8 @@ Selected Configuration:
   - Matter stack overhead: Minimal beyond Wi-Fi usage
   Total ESP32 consumption: ~320mA
 
-## Power Budget
-### System Power Consumption:
-1. ESP32-S3 Core: ~320mA
-2. HC-SR501 PIR: ~60mA
-   - Active current: 50-60mA
-   - Quiescent current: <50μA
-
-### Total System Analysis:
-- Combined worst-case consumption: ~380mA
-- Available headroom: ~120mA
-- Percentage of maximum: 76% utilization
+## Power Supply Considerations
+- USB-C input: 5V @ 500mA maximum (2.5W)
 
 ## Design Decision
 Selected Configuration:
@@ -284,6 +275,13 @@ Selected Configuration:
    - USB power typically very stable
    - Fewer components to fail
 
+## Conclusions
+- System is well within USB-C power specifications
+- Adequate headroom exists for power fluctuations
+- No additional power supply or regulation needed
+- PIR sensor can be powered directly from ESP32's 5V output
+- Matter stack adds minimal overhead to existing Wi-Fi power usage
+
 ## References
 - HC-SR501 Datasheet (v1.2): https://www.mpja.com/download/31227sc.pdf
   - Last accessed: 20250117
@@ -304,7 +302,6 @@ The project is organized into two main components, each with its own Cursor work
 ```
 esp32-matter-occupancy/              # Root directory (GitHub repository)
 ├── docs/                           # Documentation workspace
-│   ├── .cursorrules               # Cursor rules for documentation
 │   ├── spec.md                    # Project specifications
 │   ├── design.md                  # Technical design decisions
 │   ├── todo.md                    # Task tracking
@@ -316,7 +313,6 @@ esp32-matter-occupancy/              # Root directory (GitHub repository)
 │   └── assets/                    # Project assets (diagrams, images)
 │
 ├── firmware/                      # Firmware workspace
-│   ├── .cursorrules              # Cursor rules for development
 │   ├── src/                      # Source code
 │   ├── include/                  # Header files
 │   ├── components/               # ESP-IDF components
@@ -332,35 +328,3 @@ esp32-matter-occupancy/              # Root directory (GitHub repository)
 - The `references/` directory is git-ignored and used for downloaded specifications, research materials, and reference implementations
 - Each workspace has its own `.cursorrules` file for specialized Cursor configuration
 - Common assets like diagrams and images are stored in `docs/assets/` and version controlled 
-
-# Power Analysis
-
-## Power Budget Calculations
-
-### Power Supply
-- USB-C input: 5V @ 500mA maximum (2.5W)
-
-### Power Consumption Breakdown
-1. ESP32-S3 Core Components:
-   - CPU at full load: ~200mA
-   - Wi-Fi active: ~100-120mA
-   - Matter stack overhead: Minimal beyond Wi-Fi usage
-   Total ESP32 consumption: ~320mA
-
-2. HC-SR501 PIR Sensor:
-   - Operating voltage: 5V DC
-   - Active current draw: 50-60mA
-   - Quiescent current: <50μA
-   Total PIR consumption: ~60mA
-
-### Total System Power
-- Combined worst-case consumption: ~380mA
-- Available headroom: ~120mA
-- Percentage of maximum: 76% utilization
-
-### Conclusions
-- System is well within USB-C power specifications
-- Adequate headroom exists for power fluctuations
-- No additional power supply or regulation needed
-- PIR sensor can be powered directly from ESP32's 5V output
-- Matter stack adds minimal overhead to existing Wi-Fi power usage 

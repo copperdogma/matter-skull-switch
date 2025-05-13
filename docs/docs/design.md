@@ -1,3 +1,4 @@
+# DEPRECATED - Content moved to /docs/design.md
 ### Hardware Components
 - ESP32-S3 WROOM module
   - Dual-core 240 MHz processor

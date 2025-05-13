@@ -1,7 +1,7 @@
 # Matter Garage Occupancy Sensor
 
 20250116: Created by Cam Marsollier and Claude Sonnet 3.5
-20250117: Updated by Cam Marsollier with Claude Sonnet 3.5 to remove temperature sensing capability and add occupancy delay configuration
+20250117: Updated by Cam Marsollier with Claude Sonnet 3.5 to add occupancy delay configuration
 
 ## Core Purpose
 Create a reliable, Matter-compatible occupancy sensor for garage monitoring that seamlessly integrates with Apple Home via USB-C power and QR code provisioning.

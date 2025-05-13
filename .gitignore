@@ -3,14 +3,33 @@
 .idea/
 *.swp
 .DS_Store
+.cursor/
 
 # Secrets and Certificates
 *.pem
 *.key
 *.crt
+*.der
 credentials.json
 
 # Temporary and Cache Files
 __pycache__/
 *.pyc
-.cache/ 
+.cache/
+
+# ESP-IDF / ESP-Matter Build Artifacts
+build/
+build_*_*/
+sdkconfig
+sdkconfig.old
+
+# Component Manager
+dependencies.lock
+managed_components/
+
+# CI / Testing Output (optional, but good practice)
+.pytest_cache/
+build_summary_*.xml
+app_info_*.txt
+size_info_*.txt
+pytest_embedded_log/ 
