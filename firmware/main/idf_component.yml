@@ -6,3 +6,7 @@ dependencies:
       - if: "target in [esp32c2]"
   esp_bsp_generic:
     version: "^3"
+  idf: ">=5.0.0"
+
+  # All other dependencies in the project should be at versions that use the new I2C API
+  # Update or specify versions as needed for components in your project

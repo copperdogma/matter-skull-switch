@@ -10,7 +10,8 @@
 #include <esp_log.h>
 #include <esp_timer.h>
 #include <esp_random.h>
-#include <driver/i2c.h>
+#include <driver/i2c_master.h>
+#include <hal/gpio_types.h>
 
 #include <lib/support/CodeUtils.h>
 
@@ -29,56 +30,60 @@ typedef struct {
     shtc3_sensor_config_t *config;
     esp_timer_handle_t timer;
     bool is_initialized = false;
+    i2c_master_bus_handle_t bus_handle;
+    i2c_master_dev_handle_t dev_handle;
 } shtc3_sensor_ctx_t;
 
 static shtc3_sensor_ctx_t s_ctx;
 
 static esp_err_t shtc3_init_i2c()
 {
-    i2c_config_t i2c_conf = {
-        .mode = I2C_MODE_MASTER,
-        .sda_io_num = I2C_MASTER_SDA_IO,
-        .scl_io_num = I2C_MASTER_SCL_IO,
-        .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_pullup_en = GPIO_PULLUP_ENABLE,
-        .master = {
-            .clk_speed = I2C_MASTER_FREQ_HZ,
-        },
-    };
+    i2c_master_bus_config_t bus_config = {};
+    
+    bus_config.sda_io_num = static_cast<gpio_num_t>(I2C_MASTER_SDA_IO);
+    bus_config.scl_io_num = static_cast<gpio_num_t>(I2C_MASTER_SCL_IO);
+    bus_config.clk_source = I2C_CLK_SRC_DEFAULT;
+    bus_config.i2c_port = I2C_MASTER_NUM;
+    bus_config.flags.enable_internal_pullup = 1;
 
-    esp_err_t err = i2c_param_config(I2C_MASTER_NUM, &i2c_conf);
+    esp_err_t err = i2c_new_master_bus(&bus_config, &s_ctx.bus_handle);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to configure I2C driver, err:%d", err);
+        ESP_LOGE(TAG, "Failed to initialize I2C master bus, err:%d", err);
         return err;
     }
 
-    return i2c_driver_install(I2C_MASTER_NUM, I2C_MODE_MASTER, 0, 0, 0);
+    i2c_device_config_t dev_config = {};
+    dev_config.dev_addr_length = I2C_ADDR_BIT_LEN_7;
+    dev_config.device_address = SHTC3_SENSOR_ADDR;
+    dev_config.scl_speed_hz = I2C_MASTER_FREQ_HZ;
+
+    err = i2c_master_bus_add_device(s_ctx.bus_handle, &dev_config, &s_ctx.dev_handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to add I2C device, err:%d", err);
+        i2c_del_master_bus(s_ctx.bus_handle);
+        return err;
+    }
+
+    return ESP_OK;
 }
 
 static esp_err_t shtc3_read(uint8_t *data, size_t size)
 {
-    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, (SHTC3_SENSOR_ADDR << 1) | I2C_MASTER_WRITE, true /* enable_ack */);
-    // Read temperature first then humidity, with clock stretching enabled
-    i2c_master_write_byte(cmd, 0x7C, true /* enable_ack */);
-    i2c_master_write_byte(cmd, 0xA2, true /* enable_ack */);
-    i2c_master_stop(cmd);
-    i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(1000));
-    i2c_cmd_link_delete(cmd);
-    cmd = NULL;
+    uint8_t cmd[2] = {0x7C, 0xA2};
+    
+    esp_err_t err = i2c_master_transmit(s_ctx.dev_handle, cmd, sizeof(cmd), -1);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to send SHTC3 measurement command, err:%d", err);
+        return err;
+    }
 
-    // Wait for measurement to complete
     vTaskDelay(pdMS_TO_TICKS(15));
 
-    cmd = i2c_cmd_link_create();
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, (SHTC3_SENSOR_ADDR << 1) | I2C_MASTER_READ, true /* enable_ack */);
-    i2c_master_read(cmd, data, size, I2C_MASTER_LAST_NACK);
-    i2c_master_stop(cmd);
-    i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(1000));
-    i2c_cmd_link_delete(cmd);
-    cmd = NULL;
+    err = i2c_master_receive(s_ctx.dev_handle, data, size, -1);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to receive data from SHTC3, err:%d", err);
+        return err;
+    }
 
     return ESP_OK;
 }
@@ -163,12 +168,16 @@ esp_err_t shtc3_sensor_init(shtc3_sensor_config_t *config)
     err = esp_timer_create(&args, &s_ctx.timer);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "esp_timer_create failed, err:%d", err);
+        i2c_master_bus_rm_device(s_ctx.dev_handle);
+        i2c_del_master_bus(s_ctx.bus_handle);
         return err;
     }
 
     err = esp_timer_start_periodic(s_ctx.timer, config->interval_ms * 1000);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "esp_timer_start_periodic failed: %d", err);
+        i2c_master_bus_rm_device(s_ctx.dev_handle);
+        i2c_del_master_bus(s_ctx.bus_handle);
         return err;
     }
 

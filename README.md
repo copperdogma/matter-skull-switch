@@ -99,20 +99,36 @@ The following connection details are from the original `sensors` example and are
 3. Build Environment & Configuration
    ```bash
    cd firmware
+   # IMPORTANT: Ensure the ESP-IDF and ESP-Matter environments are sourced in your terminal first!
+   # (e.g., run `source $IDF_PATH/export.sh` and `source $ESP_MATTER_PATH/export.sh`)
+   # If you followed SETUP.MD, these paths will likely be:
+   source ~/esp/esp-idf/export.sh
+   source ~/esp/esp-matter/export.sh
+   #
    # The target should already be set via ../SETUP.MD, but can be confirmed/set:
    idf.py set-target esp32s3
    # Configure project-specific settings (like Wi-Fi, Matter settings, GPIOs)
    idf.py menuconfig
    ```
 
-4. Build & Flash
+4. Build and Flash
    ```bash
+   # Build the firmware
    idf.py build
-   idf.py -p [PORT] flash monitor # Flash and start monitoring serial output
+   
+   # Check which port your ESP32 is connected to
+   ls /dev/tty.*
+   
+   # Flash the firmware (replace PORT with your actual device port, e.g., /dev/tty.usbmodem101)
+   # If your device is not showing up, try:
+   # - Disconnecting and reconnecting the USB cable
+   # - Using the other USB-C port on the ESP32 (one port is for power only)
+   # - Pressing the BOOT button while connecting the device
+   # - Pressing RESET button
+   idf.py -p PORT flash monitor
    ```
-   *(Replace `[PORT]` with your ESP32-S3's serial port, e.g., `/dev/tty.usbmodem12345` or `COM3`)*
 
-## Usage (Testing with chip-tool)
+5. Initial Setup & Commissioning
 
 These instructions are for testing the sensor clusters using `chip-tool`.
 

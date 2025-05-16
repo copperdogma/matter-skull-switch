@@ -179,18 +179,19 @@ extern "C" void app_main()
     ABORT_APP_ON_FAILURE(humidity_sensor_ep != nullptr, ESP_LOGE(TAG, "Failed to create humidity_sensor endpoint"));
 
     // initialize temperature and humidity sensor driver (shtc3)
-    static shtc3_sensor_config_t shtc3_config = {
-        .temperature = {
-            .cb = temp_sensor_notification,
-            .endpoint_id = endpoint::get_id(temp_sensor_ep),
-        },
-        .humidity = {
-            .cb = humidity_sensor_notification,
-            .endpoint_id = endpoint::get_id(humidity_sensor_ep),
-        },
-    };
-    err = shtc3_sensor_init(&shtc3_config);
-    ABORT_APP_ON_FAILURE(err == ESP_OK, ESP_LOGE(TAG, "Failed to initialize temperature sensor driver"));
+    // We don't have the physical sensor connected yet, so we should disable it to avoid errors
+    // static shtc3_sensor_config_t shtc3_config = {
+    //     .temperature = {
+    //         .cb = temp_sensor_notification,
+    //         .endpoint_id = endpoint::get_id(temp_sensor_ep),
+    //     },
+    //     .humidity = {
+    //         .cb = humidity_sensor_notification,
+    //         .endpoint_id = endpoint::get_id(humidity_sensor_ep),
+    //     },
+    // };
+    // err = shtc3_sensor_init(&shtc3_config);
+    // ABORT_APP_ON_FAILURE(err == ESP_OK, ESP_LOGE(TAG, "Failed to initialize temperature sensor driver"));
 
     // add the occupancy sensor
     occupancy_sensor::config_t occupancy_sensor_config;

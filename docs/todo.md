@@ -41,6 +41,8 @@
 *Code editing can still be done in your local IDE (Cursor), as the project directory is mounted into the container.*
 
 - [ ] Basic Firmware Implementation (Phase 1 - Initial tests in Local PlatformIO, then transition to Docker for Matter integration):
+  - [ ] Upload basic firmware to ESP32-S3
+    - idf.py -p /dev/tty.usbmodem101 flash monitor
   - [ ] Hello World test program (Can start locally with PlatformIO, then build in Docker)
   - [ ] PIR interrupt handling (Basic GPIO read locally, full interrupt logic in Docker with ESP-IDF)
   - [ ] LED status indicators (Basic control locally, more complex status with Matter in Docker)
