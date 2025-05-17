@@ -45,8 +45,7 @@ CONFIG_BSP_BUTTON_1_LEVEL=0
 # Enable OTA Requestor
 CONFIG_ENABLE_OTA_REQUESTOR=y
 
-# Force the project to use the old driver consistently
-# Legacy I2C driver
-# CONFIG_I2C_ENABLE_SLAVE_DRIVER_VERSION_2=y
-# CONFIG_I2C_LEGACY_DRIVER_COMPAT=y
-# CONFIG_I2C_LEGACY_DRIVER_SKIP_LEGACY_CONFLICT_CHECK=y
+# Force disable I2C new master driver to avoid conflicts
+CONFIG_I2C_ENABLE_MASTER_DRIVER_VERSION_2=n
+
+# Matter platform configs for sensor example
