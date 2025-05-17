@@ -2,24 +2,28 @@
 # CMakeLists in this exact order for cmake to work correctly
 cmake_minimum_required(VERSION 3.5)
 
-if(NOT DEFINED ENV{ESP_MATTER_PATH})
-    message(FATAL_ERROR "Please set ESP_MATTER_PATH to the path of esp-matter repo")
-endif(NOT DEFINED ENV{ESP_MATTER_PATH})
+# ESP_MATTER_PATH related lines are removed as we will use managed components.
+# if(NOT DEFINED ENV{ESP_MATTER_PATH})
+#     message(FATAL_ERROR "ESP_MATTER_PATH environment variable is not set. Please source esp-matter's export.sh.")
+# endif()
 
 set(PROJECT_VER "1.0")
 set(PROJECT_VER_NUMBER 1)
 
-set(ESP_MATTER_PATH $ENV{ESP_MATTER_PATH})
-set(MATTER_SDK_PATH ${ESP_MATTER_PATH}/connectedhomeip/connectedhomeip)
+# MATTER_SDK_PATH might still be needed by some esp-matter internals if not fully managed.
+# We'll keep its definition for now, but it won't be used for component discovery here.
+if(DEFINED ENV{ESP_MATTER_PATH})
+    set(MATTER_SDK_PATH "$ENV{ESP_MATTER_PATH}/connectedhomeip/connectedhomeip")
+else()
+    # If esp-matter is purely a managed component, this path might need to point inside managed_components.
+    # For now, leave it conditional. If build fails related to MATTER_SDK_PATH, we'll address it.
+    message(WARNING "ESP_MATTER_PATH is not defined. MATTER_SDK_PATH might be incorrect if esp-matter scripts rely on it externally.")
+endif()
 
 # This should be done before using the IDF_TARGET variable.
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
-set(EXTRA_COMPONENT_DIRS
-    "${ESP_MATTER_PATH}/examples/common"
-    "${MATTER_SDK_PATH}/config/esp32/components"
-    "${ESP_MATTER_PATH}/components"
-    ${extra_components_dirs_append})
+# EXTRA_COMPONENT_DIRS for esp-matter removed. Managed dependencies will be handled by IDF.
 
 project(sensors)
 

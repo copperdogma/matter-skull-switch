@@ -133,20 +133,22 @@
 - [ ] **Monitor (Previously Critical):** `E (587) esp_matter_cluster: Config is NULL or mandatory features are missing.`
     - Context: Occurs immediately after `factory_reset_button_register()` and during `esp_matter::node::create(&node_config, ...)`. Potentially indicates an issue with root node (Endpoint 0) or its mandatory cluster (Basic Info, Identify, Descriptor) initialization.
     - Current Status: The error persists. However, the device appears to commission and function as an occupancy sensor in the Home app. This error is now considered lower priority but should be monitored. If other issues arise that could be related to Endpoint 0 instability, this error might need to be revisited.
+    - Github file where this error is thrown in the esp-matter repo: https://github.com/espressif/esp-matter/blob/057ac6a3e06f29a8a6f0e942228d01064e6942d3/components/esp_matter/esp_matter_cluster.cpp#L702
     - Attempts Made & Failed:
-        - Zero-initializing `node_config{}`.
+        - Zero-initializing `node_config{}`. This relies heavily on Kconfig for mandatory cluster defaults.
         - Explicitly setting `node_config.root_node.basic_information` members (e.g., `vendor_name`, `product_name`, `node_label`). Caused build errors if members didn't exist directly in `esp_matter::cluster::basic_information::config_t`.
         - Explicitly setting `node_config.root_node.identify` members (e.g., `identify_type`, `cluster_revision`). Caused build errors as `identify` is not a direct member of `esp_matter::endpoint::root_node::config_t`.
         - Explicitly setting `node_config.root_node.basic_information.cluster_revision` and `node_config.root_node.identify.cluster_revision / identify_type`. Caused build errors due to incorrect struct member access.
         - Reverted to simplest `node::config_t node_config{};` which builds but error persists.
+        - Investigated and fixed linker errors related to `app_reset_button_register` by copying `app_reset.h` and `app_reset.cpp` into `firmware/main` and updating `main/CMakeLists.txt`. This fixed the build but did not resolve the "Config is NULL" error, indicating they are separate issues. The `app_reset` functionality itself is not the cause of the "Config is NULL" error.
+    - Key Learnings & Suspicions:
+        - The error "Config is NULL or mandatory features are missing" strongly points to an incomplete or misconfigured mandatory cluster on the root endpoint (Endpoint 0). These include Descriptor, Basic Information, Identify, General Commissioning, and Network Commissioning.
+        - Since `node_config` in `app_main.cpp` is zero-initialized, the configuration for these root node clusters is primarily derived from Kconfig settings.
+        - If `Component config -> ESP Matter -> Device Info Provider options` is set to `Device Info - Custom` (as it currently is), the settings under `Component config -> ESP Matter -> Device Basic Information` (like VID, PID, Vendor Name, Product Name, serial number, hardware/software versions) become critical and **must be fully populated**. Blank or incomplete entries here are a very likely cause of the error.
     - Next Steps to Attempt:
-        - **Verify Kconfig Settings:** Crucial settings for Vendor ID (VID), Product ID (PID), device type, and default cluster features for Endpoint 0 are primarily controlled by Kconfig (`menuconfig`). Systematically review and confirm these:
-            - `Component config -> ESP Matter -> Device Information Provider` (ensure it's not 'custom' unless intended and fully configured).
-            - `Component config -> ESP Matter -> Device Basic Information` (check VID, PID, names, versions).
-            - `Component config -> ESP Matter -> General` (Enable Matter server).
-        - **Review Factory Partition:** Ensure factory partition is correctly generated and flashed, containing necessary VID/PID if Kconfig relies on it.
-        - **Investigate `app_reset_button_register()`:** While less likely, check if `app_reset.h` or its implementation (likely within ESP-IDF or `esp-matter` common components) has any early Matter interactions or prerequisites that might conflict if `node::create` is called before them.
-        - **Consult ESP-Matter Examples for Root Node Setup:** Re-examine official `esp-matter` examples, focusing minutely on how `node::create` is called and what minimal Kconfig settings are used for the simplest root node device types (e.g., a root node device, OTA provider).
+        - **Deep Dive into Kconfig for Basic Information:**
+            - Verify **ALL** settings under `Component config -> ESP Matter -> Device Basic Information`. Ensure Vendor Name, Product Name, Hardware Version String, Software Version String, and Serial Number are explicitly set and not blank.
+            - Confirm Vendor ID (VID) and Product ID (PID) in this section are correct.
 - [ ] **Investigate:** `chip[ZCL]: WRITE ERR: ep 0 clus 0x0000_0030 attr 0x0000_0000 not supported`
     - Context: Logged after commissioning. Indicates an attempt to write to the OnOff attribute (0x0000) of the OnOff cluster (0x0030) on Endpoint 0 (Root Node). Endpoint 0 should not have an OnOff cluster.
     - Possible Causes:
@@ -158,13 +160,8 @@
         - This is secondary to PIR sensor functionality but important for full compliance.
 - [ ] **Error:** `E (77757) chip[SC]: The device does not support GetClock_RealTimeMS() API: 6c. Falling back to Last Known Good UTC Time` (Repeated at `E (86917)`)
     - Context: Occurs during secure session (CASE) establishment. Indicates the underlying platform (ESP-IDF) isn't providing an expected millisecond-precision real-time clock API. The Matter stack needs accurate time for certificate validation and other functions. Error `6c` suggests `CHIP_ERROR_UNSUPPORTED_CHIP_FEATURE`.
-    - Action: 
-        - The system falls back to "Last Known Good UTC Time," which is generally sufficient, making this a non-critical issue for basic operation.
-        - To improve time accuracy and potentially resolve the warning: 
-            - Ensure SNTP client is enabled and configured in ESP-IDF `menuconfig` (`Component config` -> `LWIP` -> `SNTP`). This allows the device to get network time once Wi-Fi is up.
-            - Review ESP-IDF system time settings (`Component config` -> `ESP System Settings` -> `Time/Timezone`).
-            - Check if any specific `esp-matter` or ESP-IDF configurations relate to high-resolution timers or clock sources that might enable better support for `GetClock_RealTimeMS()`.
-        - This is likely a lower priority than the `esp_matter_cluster` error, as the fallback is in place.
+    - Investigation: Confirmed Freenove ESP32-S3 has a 32kHz crystal. Changed RTC clock source to "External 32 kHz crystal" in `menuconfig`, but this did not resolve the warning. SNTP is enabled. **Reverted RTC clock source to the default "Internal 136 kHz RC oscillator" as the device functions correctly with it and the change did not impact the warning.**
+    - Status (YYYY-MM-DD): **Commissioning is successful and device operates as expected despite this error still appearing in logs.** The error is now considered a low-priority warning. See GitHub issue: [https://github.com/espressif/esp-matter/issues/1095](https://github.com/espressif/esp-matter/issues/1095)
 - [ ] **Missing Diagnostics Attributes:** `E (81077) chip[DMG]: Read request on unknown cluster - no data version available` (and similar for cluster `0x0000_0046` - Software Diagnostics).
     - Context: Home app attempts to read attributes from Software Diagnostics cluster (`0x0046`) on Endpoint 0 (e.g., `CurrentHeapUsed`, `ThreadMetrics`), but device reports errors like "unknown cluster" or "no data version available". This means the cluster isn't present or fully initialized on Endpoint 0.
     - Action: 

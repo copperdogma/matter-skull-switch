@@ -1,24 +1,22 @@
-/*----------------------------------------------------------------------------
+/*
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
- * Copyright (c) Unspecified LLC. All rights reserved.
- *
- * Provided under end user license agreement.
- *
- * THIS FILE IS PROVIDED AS IS AND WITHOUT WARRANTY OF ANY KIND, AND LINUX FOUNDATION PROJECT AND ITS CONTRIBUTORS EXPRESSLY DISCLAIM ALL WARRANTIES (WHETHER EXPRESS OR IMPLIED) OF INNOVATION FITNESS FOR ANY PARTICULAR PURPOSE, MERCHANTABILITY, COUNTER INFRINGEMENT, INTEROPERABILITY OR OTHERWISE. THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT ARE EXPRESSLY DISCLAIMED.
- *
- *--------------------------------------------------------------------------*/
-
-#include <esp_check.h>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <esp_log.h>
-#include <esp_timer.h>
-#include <esp_random.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <freertos/timers.h>
+#include <esp_heap_caps.h>
+#include <string.h>
+#include <math.h>
 #include <driver/i2c.h> // Use legacy I2C driver
 #include <cmath> // For NAN
+#include <inttypes.h> // For PRIu32
 
 #include <lib/support/CodeUtils.h>
 #include <esp_matter.h> // For chip::app::Clusters and esp_matter_invalid
 #include <app/ConcreteAttributePath.h> // For chip::app::Clusters definitions
-#include "common_macros.h" // For ABORT_APP_ON_FAILURE
 
 #include "shtc3.h"
 
@@ -28,44 +26,28 @@
 #define I2C_MASTER_FREQ_HZ          400000                        /*!< I2C master clock frequency */
 #define SHTC3_SENSOR_ADDR           0x70                          /*!< slave address for SHTC3 sensor */
 
-static const char *TAG = "shtc3";
+// SHTC3 Commands (Needed for shtc3_sensor_init internal operations)
+#define SHTC3_WAKE_UP_COMMAND_MSB           0x35
+#define SHTC3_WAKE_UP_COMMAND_LSB           0x17
+#define SHTC3_SLEEP_COMMAND_MSB             0xB0
+#define SHTC3_SLEEP_COMMAND_LSB             0x98
+#define SHTC3_READ_ID_COMMAND_MSB           0xEF
+#define SHTC3_READ_ID_COMMAND_LSB           0xC8
+#define SHTC3_MEASURE_T_FIRST_MSB           0x7C // Low power, T first, Clock stretching enabled
+#define SHTC3_MEASURE_T_FIRST_LSB           0xA2 // Low power, T first, Clock stretching enabled
 
-typedef struct {
-    shtc3_sensor_config_t *config;
-    esp_timer_handle_t timer;
-    bool is_initialized = false;
-    // No bus_handle or dev_handle needed for legacy driver in this context
-} shtc3_sensor_ctx_t;
+static const char *TAG = "shtc3_driver";
 
-static shtc3_sensor_ctx_t s_ctx;
+#define SHTC3_PRODUCT_CODE_MASK             0x083F // From datasheet, bits 5 and 11-15 are don't care
+#define SHTC3_PRODUCT_CODE_SHTC3            0x0807 // SHTC3 product code is 0b0000_1000_0xxx_0111
 
-static esp_err_t shtc3_init_i2c()
-{
-    i2c_config_t i2c_conf = {
-        .mode = I2C_MODE_MASTER,
-        .sda_io_num = I2C_MASTER_SDA_IO,
-        .scl_io_num = I2C_MASTER_SCL_IO,
-        .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_pullup_en = GPIO_PULLUP_ENABLE,
-        .master = {
-            .clk_speed = I2C_MASTER_FREQ_HZ,
-        },
-         // .clk_flags = 0, // Only for new driver
-    };
+#define SHTC3_PRODUCT_CODE_SIZE_BYTES       2
 
-    esp_err_t err = i2c_param_config(I2C_MASTER_NUM, &i2c_conf);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to configure I2C driver, err:%d", err);
-        return err;
-    }
-
-    err = i2c_driver_install(I2C_MASTER_NUM, I2C_MODE_MASTER, 0, 0, 0);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to install I2C driver, err: %d", err);
-        return err;
-    }
-    return ESP_OK;
-}
+// Global static variable to store the sensor configuration
+static shtc3_sensor_config_t *g_sensor_config = NULL;
+// Global static variable for the timer handle
+static TimerHandle_t g_sensor_timer_handle = NULL;
+static bool g_is_sensor_initialized = false;
 
 static esp_err_t shtc3_read(uint8_t *data, size_t size)
 {
@@ -131,6 +113,12 @@ static uint8_t shtc3_crc8(const uint8_t *data, int len)
 
 static void shtc3_sensor_report_task(void *pvParameters)
 {
+    if (!g_sensor_config) {
+        ESP_LOGE(TAG, "Sensor not configured, cannot report.");
+        vTaskDelete(NULL);
+        return;
+    }
+
     uint8_t data_rd[6]; // Temp MSB, LSB, CRC, RH MSB, LSB, CRC
     esp_err_t err = shtc3_read(data_rd, sizeof(data_rd));
 
@@ -145,8 +133,8 @@ static void shtc3_sensor_report_task(void *pvParameters)
         } else {
             float temperature = -45.0f + 175.0f * (temp_raw / 65535.0f);
             ESP_LOGI(TAG, "Temperature: %.2f C", temperature);
-            if (s_ctx.config && s_ctx.config->temperature.cb) {
-                s_ctx.config->temperature.cb(s_ctx.config->temperature.endpoint_id, temperature, s_ctx.config->user_data);
+            if (g_sensor_config->temperature.cb) {
+                g_sensor_config->temperature.cb(g_sensor_config->temperature.endpoint_id, temperature, g_sensor_config->user_data);
             }
         }
 
@@ -158,67 +146,167 @@ static void shtc3_sensor_report_task(void *pvParameters)
             humidity = (humidity < 0.0f) ? 0.0f : humidity;
             humidity = (humidity > 100.0f) ? 100.0f : humidity;
             ESP_LOGI(TAG, "Humidity: %.2f %%", humidity);
-            if (s_ctx.config && s_ctx.config->humidity.cb) {
-                s_ctx.config->humidity.cb(s_ctx.config->humidity.endpoint_id, humidity, s_ctx.config->user_data);
+            if (g_sensor_config->humidity.cb) {
+                g_sensor_config->humidity.cb(g_sensor_config->humidity.endpoint_id, humidity, g_sensor_config->user_data);
             }
         }
     } else {
         ESP_LOGE(TAG, "Failed to read from SHTC3 sensor");
         // Optionally, report a default/error value or NaN
-        if (s_ctx.config && s_ctx.config->temperature.cb) {
-             s_ctx.config->temperature.cb(s_ctx.config->temperature.endpoint_id, NAN, s_ctx.config->user_data);
+        if (g_sensor_config->temperature.cb) {
+             g_sensor_config->temperature.cb(g_sensor_config->temperature.endpoint_id, NAN, g_sensor_config->user_data);
         }
-        if (s_ctx.config && s_ctx.config->humidity.cb) {
-            s_ctx.config->humidity.cb(s_ctx.config->humidity.endpoint_id, NAN, s_ctx.config->user_data);
+        if (g_sensor_config->humidity.cb) {
+            g_sensor_config->humidity.cb(g_sensor_config->humidity.endpoint_id, NAN, g_sensor_config->user_data);
         }
     }
     vTaskDelete(NULL);
 }
 
 
-static void shtc3_sensor_timer_cb(void *arg)
+static void shtc3_sensor_timer_cb(TimerHandle_t xTimer)
 {
     // Create a task to handle sensor reading and reporting
     // This avoids blocking the timer callback, which should be short
     xTaskCreate(shtc3_sensor_report_task, "shtc3_report", 2048, NULL, 5, NULL);
 }
 
-esp_err_t shtc3_sensor_init(shtc3_sensor_config_t *config)
+esp_err_t shtc3_sensor_init(shtc3_sensor_config_t *config_param)
 {
     ESP_LOGI(TAG, "Initializing SHTC3 sensor");
-    if (s_ctx.is_initialized) {
+    if (g_is_sensor_initialized) {
         ESP_LOGI(TAG, "SHTC3 sensor already initialized");
         return ESP_OK;
     }
 
-    s_ctx.config = config;
+    if (!config_param) {
+        ESP_LOGE(TAG, "SHTC3 config cannot be NULL");
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (!config_param->temperature.cb && !config_param->humidity.cb) {
+        ESP_LOGE(TAG, "At least one callback (temperature or humidity) must be provided");
+        return ESP_ERR_INVALID_ARG;
+    }
 
-    esp_err_t err = shtc3_init_i2c();
-    ABORT_APP_ON_FAILURE(err == ESP_OK, ESP_LOGE(TAG, "Failed to initialize I2C for SHTC3, err: %d", err));
+    g_sensor_config = config_param; // Store the provided config
 
-    s_ctx.is_initialized = true;
-
-    esp_timer_create_args_t args = {
-        .callback = shtc3_sensor_timer_cb,
-        .arg = NULL,
-        .dispatch_method = ESP_TIMER_TASK,
-        .name = "shtc3_sensor_timer",
+    // Initialize I2C master
+    i2c_config_t conf = {
+        .mode = I2C_MODE_MASTER,
+        .sda_io_num = I2C_MASTER_SDA_IO,
+        .scl_io_num = I2C_MASTER_SCL_IO,
+        .sda_pullup_en = GPIO_PULLUP_ENABLE,
+        .scl_pullup_en = GPIO_PULLUP_ENABLE,
+        .master = {.clk_speed = I2C_MASTER_FREQ_HZ},
+        .clk_flags = 0, // Explicitly initialize clk_flags
     };
-
-    err = esp_timer_create(&args, &s_ctx.timer);
+    esp_err_t err = i2c_param_config(I2C_MASTER_NUM, &conf);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "esp_timer_create failed, err:%d", err);
-        // i2c_driver_delete(I2C_MASTER_NUM); // Clean up I2C driver if timer fails
+        ESP_LOGE(TAG, "I2C master config failed: %s", esp_err_to_name(err));
+        g_sensor_config = NULL;
+        return err;
+    }
+    err = i2c_driver_install(I2C_MASTER_NUM, conf.mode, 0, 0, 0);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "I2C driver install failed: %s", esp_err_to_name(err));
+        g_sensor_config = NULL;
         return err;
     }
 
-    err = esp_timer_start_periodic(s_ctx.timer, config->interval_ms * 1000);
+    // Verify sensor presence and product code (simplified from shtc3_init)
+    // Wake up sensor
+    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+    i2c_master_start(cmd);
+    i2c_master_write_byte(cmd, (SHTC3_SENSOR_ADDR << 1) | I2C_MASTER_WRITE, true);
+    i2c_master_write_byte(cmd, SHTC3_WAKE_UP_COMMAND_MSB, true);
+    i2c_master_write_byte(cmd, SHTC3_WAKE_UP_COMMAND_LSB, true);
+    i2c_master_stop(cmd);
+    err = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(1000));
+    i2c_cmd_link_delete(cmd);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "esp_timer_start_periodic failed: %d", err);
-        // i2c_driver_delete(I2C_MASTER_NUM); // Clean up I2C driver
+        ESP_LOGE(TAG, "Failed to wake up SHTC3 during init: %s", esp_err_to_name(err));
+        i2c_driver_delete(I2C_MASTER_NUM);
+        g_sensor_config = NULL;
+        return err;
+    }
+    vTaskDelay(pdMS_TO_TICKS(1)); // Short delay after wakeup
+
+    // Read ID
+    uint8_t id_data[SHTC3_PRODUCT_CODE_SIZE_BYTES];
+    cmd = i2c_cmd_link_create();
+    i2c_master_start(cmd);
+    i2c_master_write_byte(cmd, (SHTC3_SENSOR_ADDR << 1) | I2C_MASTER_WRITE, true);
+    i2c_master_write_byte(cmd, SHTC3_READ_ID_COMMAND_MSB, true);
+    i2c_master_write_byte(cmd, SHTC3_READ_ID_COMMAND_LSB, true);
+    i2c_master_stop(cmd);
+    err = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(1000));
+    i2c_cmd_link_delete(cmd);
+     if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to send read ID command SHTC3: %s", esp_err_to_name(err));
+        i2c_driver_delete(I2C_MASTER_NUM);
+        g_sensor_config = NULL;
+        return err;
+    }
+    vTaskDelay(pdMS_TO_TICKS(1)); // Short delay
+
+    cmd = i2c_cmd_link_create();
+    i2c_master_start(cmd);
+    i2c_master_write_byte(cmd, (SHTC3_SENSOR_ADDR << 1) | I2C_MASTER_READ, true);
+    i2c_master_read(cmd, id_data, SHTC3_PRODUCT_CODE_SIZE_BYTES, I2C_MASTER_LAST_NACK);
+    i2c_master_stop(cmd);
+    err = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(1000));
+    i2c_cmd_link_delete(cmd);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to read SHTC3 product code: %s", esp_err_to_name(err));
+        i2c_driver_delete(I2C_MASTER_NUM);
+        g_sensor_config = NULL;
         return err;
     }
 
-    ESP_LOGI(TAG, "SHTC3 sensor initialized and timer started");
+    uint16_t product_code = (id_data[0] << 8) | id_data[1];
+    if ((product_code & SHTC3_PRODUCT_CODE_MASK) != SHTC3_PRODUCT_CODE_SHTC3) {
+        ESP_LOGE(TAG, "SHTC3 product code mismatch. Expected: 0x%04X, Got: 0x%04X", SHTC3_PRODUCT_CODE_SHTC3, product_code);
+        i2c_driver_delete(I2C_MASTER_NUM);
+        g_sensor_config = NULL;
+        return ESP_FAIL;
+    }
+    ESP_LOGI(TAG, "SHTC3 Product code: 0x%04X", product_code);
+
+    // Put sensor to sleep
+    cmd = i2c_cmd_link_create();
+    i2c_master_start(cmd);
+    i2c_master_write_byte(cmd, (SHTC3_SENSOR_ADDR << 1) | I2C_MASTER_WRITE, true);
+    i2c_master_write_byte(cmd, SHTC3_SLEEP_COMMAND_MSB, true);
+    i2c_master_write_byte(cmd, SHTC3_SLEEP_COMMAND_LSB, true);
+    i2c_master_stop(cmd);
+    err = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(1000));
+    i2c_cmd_link_delete(cmd);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "Failed to put SHTC3 to sleep during init: %s", esp_err_to_name(err));
+        // Not a fatal error for init, sensor might just consume more power
+    }
+
+
+    // Create timer for periodic reading
+    g_sensor_timer_handle = xTimerCreate("shtc3_timer", pdMS_TO_TICKS(g_sensor_config->interval_ms),
+                                       true /* auto-reload */, NULL /* timer ID */, shtc3_sensor_timer_cb);
+    if (g_sensor_timer_handle == NULL) {
+        ESP_LOGE(TAG, "Failed to create SHTC3 timer");
+        i2c_driver_delete(I2C_MASTER_NUM);
+        g_sensor_config = NULL;
+        return ESP_FAIL;
+    }
+
+    if (xTimerStart(g_sensor_timer_handle, 0) != pdPASS) {
+        ESP_LOGE(TAG, "Failed to start SHTC3 timer");
+        xTimerDelete(g_sensor_timer_handle, 0);
+        g_sensor_timer_handle = NULL;
+        i2c_driver_delete(I2C_MASTER_NUM);
+        g_sensor_config = NULL;
+        return ESP_FAIL;
+    }
+
+    g_is_sensor_initialized = true;
+    ESP_LOGI(TAG, "SHTC3 sensor initialized successfully, polling every %" PRIu32 " ms", g_sensor_config->interval_ms);
     return ESP_OK;
 }
