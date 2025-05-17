@@ -42,9 +42,13 @@ A reliable, Matter-compatible occupancy sensor designed for garage monitoring th
 
 This project aims to create a Matter-enabled Occupancy Sensor using an ESP32-S3. It is based on the `esp-matter/examples/sensors` example, which also demonstrates temperature and humidity sensors (SHTC3) alongside an occupancy sensor (PIR).
 
-This application, by default (from the base example), creates the temperature sensor, humidity sensor, and occupancy sensor on endpoint 1, 2, and 3 respectively. For this project, we will primarily focus on the occupancy sensor functionality.
+While the base `esp-matter/examples/sensors` example demonstrates multiple sensors (temperature, humidity, occupancy) on different endpoints, this project is streamlined to focus **only on the occupancy sensor functionality, which will reside on Endpoint 1.**
 
-See the [ESP-Matter Developing Guide](https://docs.espressif.com/projects/esp-matter/en/latest/esp32/developing.html) for more information about building, flashing, and customizing Matter firmware.
+For detailed information about building, flashing, and customizing Matter firmware, refer to the official documentation:
+- **ESP-IDF v5.4.1 Programming Guide (ESP32-S3):** [https://docs.espressif.com/projects/esp-idf/en/v5.4.1/esp32s3/](https://docs.espressif.com/projects/esp-idf/en/v5.4.1/esp32s3/)
+- **ESP-Matter Developing Guide (for `main` branch):** [https://docs.espressif.com/projects/esp-matter/en/latest/esp32/developing.html](https://docs.espressif.com/projects/esp-matter/en/latest/esp32/developing.html)
+- **ESP32-S3 Hardware Resources (Datasheet, TRM):** [https://www.espressif.com/en/products/socs/esp32-s3/resources](https://www.espressif.com/en/products/socs/esp32-s3/resources)
+- **Matter `chip-tool` Documentation:** [https://github.com/project-chip/connectedhomeip/blob/master/examples/chip-tool/README.md](https://github.com/project-chip/connectedhomeip/blob/master/examples/chip-tool/README.md) (Note: A version of this is also available locally in your `esp-matter/connectedhomeip/examples/chip-tool/` directory).
 
 ### Connecting the Sensors (Example Configuration - Needs ESP32-S3 Adaptation)
 
@@ -86,7 +90,7 @@ The following connection details are from the original `sensors` example and are
 ## Development Setup
 
 1. Install Prerequisites
-   - ESP-IDF v5.1+ (Ensure environment variables are set, see `SETUP.MD`)
+   - ESP-IDF v5.4.1 (Ensure environment variables are set, see `SETUP.MD`)
    - Matter SDK (As configured during setup, see `SETUP.MD`)
    - Development certificates (As configured during setup, see `SETUP.MD`)
 
@@ -110,6 +114,7 @@ The following connection details are from the original `sensors` example and are
    # Configure project-specific settings (like Wi-Fi, Matter settings, GPIOs)
    idf.py menuconfig
    ```
+   *For guidance on specific `menuconfig` options, use the search (`/`) and help features within `menuconfig` itself, or search for the Kconfig option name in the [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v5.4.1/esp32s3/) and [ESP-Matter](https://docs.espressif.com/projects/esp-matter/en/latest/esp32/developing.html) documentation.*
 
 4. Build and Flash
    ```bash
@@ -198,4 +203,66 @@ esp32-matter-occupancy/
 
 ## Author
 
-Cam Marsollier 
+Cam Marsollier
+
+## Matter Development Certificates and Factory NVS Partition Generation
+
+For detailed instructions on generating Matter development certificates and the factory NVS partition binary, please refer to **Section 6: "Generate Matter Development Certificates"** and subsequent related sections in the `SETUP.MD` file. This ensures you are following the most up-to-date and comprehensive procedure for your specific environment.
+
+`SETUP.MD` covers:
+- Generating PAA, PAI, and DAC certificates using `chip-cert`.
+- Generating the Certification Declaration (CD).
+- Installing and using `esp-matter-mfg-tool` to create the factory NVS partition binary.
+- Identifying the NVS partition offset from `partitions.csv`.
+- Instructions for flashing the `mfg_nvs.bin`.
+
+Keeping these detailed instructions centralized in `SETUP.MD` helps avoid duplication and ensures consistency.
+
+## Temporary Notes & Critical Learnings
+
+This section collects important, non-obvious findings during development. This information will be integrated into the main documentation later.
+
+### Matter Commissioning Codes (QR Code & Manual Setup)
+
+A critical aspect of getting an ESP32-Matter device to commission with a controller (like Apple Home) is using the **correct and current commissioning codes**.
+
+1.  **Dynamic vs. Fixed Codes:**
+    *   **Default Behavior (Most Examples):** When flashing a standard ESP-Matter example (like `light` or `sensor`) without a specially prepared "factory partition" containing fixed credentials, the device will often use default test parameters or generate new ones upon first boot or after a full re-flash (e.g., after `idf.py fullclean`).
+    *   **Factory Partition (Advanced):** For production or consistent testing, a factory partition can be created (e.g., using `mfg_tool.py`) and flashed to the device. This embeds fixed commissioning parameters (VID, PID, passcode, discriminator), and the QR code/manual code associated with these parameters would remain persistent across application flashes.
+
+2.  **Finding the Correct Codes:**
+    *   **Serial Monitor is Key:** The primary source for current commissioning information is the **serial monitor output** immediately after flashing and booting the device.
+    *   **Explicit QR/Manual Code Logs:** Look for lines similar to:
+        ```
+        I (xxxx) esp_matter_qrcode: Manual pairing code: XXXXXXXXXXX
+        I (xxxx) esp_matter_qrcode: Onboarding QRCode: MT:YYYYYYYYYYYYYYY
+        ```
+        If these are present, use them. The `MT:` string is the payload for QR code generation.
+    *   **Commission Parameter Log:** If the explicit QR code logs are *not* present (as was the case with the `light` example on ESP32-S3 during recent tests), look for a line like:
+        ```
+        I (xxxx) chip[DIS]: Advertise commission parameter vendorID=AAAAA productID=BBBBB discriminator=CCCC/DD ...
+        ```
+        This provides:
+        *   `vendorID` (VID)
+        *   `productID` (PID)
+        *   `discriminator` (Long discriminator is `CCCC`, short is often derived or part of the `DD`)
+    *   **Default Test Passcode:** In the absence of an explicitly logged manual code, and if the device is using default test configurations (often true for examples), the **standard Matter test passcode `20202021`** should be attempted for manual pairing.
+        *   **Experience:** For the `light` example on an ESP32-S3, when explicit QR/manual code logs were missing, using the manual setup code `20202021` with Apple Home worked successfully. The device advertised `vendorID=65521`, `productID=32768`, and `discriminator=3840`.
+
+3.  **CRITICAL - Do NOT Reuse Old Codes:**
+    *   Using a QR code or manual setup code from a *previous example build*, a *different project*, or a *generic SDK setup document* is highly likely to **FAIL**.
+    *   The inability to commission the `sensor` example in earlier attempts (approx. 50 tries) was very likely due to repeatedly using a stale QR code that was no longer valid for the flashed firmware. Each significant re-flash (especially after a `fullclean`) can reset these dynamic credentials.
+
+**Always ensure you are using the commissioning information that corresponds to the exact firmware binary currently running on the device.**
+
+### Controller Behavior Observations (Apple Home)
+
+During testing with Apple Home, some notable behaviors were observed:
+
+1.  **Intermittent "No Code Needed" Commissioning:**
+    *   **Observation:** On some occasions, particularly when re-adding a device that had been recently commissioned (even with different firmware like the `light` example followed by the `sensor` example), Apple Home did not prompt for a commissioning code (QR or manual). It allowed adding the device directly.
+    *   **Likely Cause:** This is suspected to be due to controller-side caching (by the Home Hub or iPhone) of the device's network identifiers (e.g., MAC address). Even with new firmware, if the device appears on the network with some familiar identifiers, the controller might streamline the re-addition process or use previously exchanged security material if a fabric wasn't completely torn down on the controller side. This behavior was observed even when Wi-Fi NVS was disabled on the ESP32 (which should clear Wi-Fi credentials).
+
+2.  **Initial Incorrect Device Type Advertisement:**
+    *   **Observation:** When initiating the pairing process in Apple Home, the ESP32 device (running the `sensors` example) initially advertised itself as a "Light". However, upon proceeding with the addition, Apple Home correctly identified it as a sensor device and prompted for temperature, humidity, and occupancy settings.
+    *   **Likely Cause:** This is also attributed to caching within the Apple Home app or Home Hub. The app might initially display a device based on stale mDNS (Bonjour) advertisement data or a cached "friendly name" associated with the device's network presence from a previous configuration (like the `

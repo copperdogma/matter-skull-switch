@@ -22,6 +22,7 @@ build/
 build_*_*/
 sdkconfig
 sdkconfig.old
+credentials/dev-certs/factory_nvs.bin/
 
 # Component Manager
 dependencies.lock

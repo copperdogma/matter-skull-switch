@@ -30,44 +30,6 @@ using namespace esp_matter::attribute;
 using namespace esp_matter::endpoint;
 using namespace chip::app::Clusters;
 
-// Application cluster specification, 7.18.2.11. Temperature
-// represents a temperature on the Celsius scale with a resolution of 0.01°C.
-// temp = (temperature in °C) x 100
-static void temp_sensor_notification(uint16_t endpoint_id, float temp, void *user_data)
-{
-    // schedule the attribute update so that we can report it from matter thread
-    chip::DeviceLayer::SystemLayer().ScheduleLambda([endpoint_id, temp]() {
-        attribute_t * attribute = attribute::get(endpoint_id,
-                                                 TemperatureMeasurement::Id,
-                                                 TemperatureMeasurement::Attributes::MeasuredValue::Id);
-
-        esp_matter_attr_val_t val = esp_matter_invalid(NULL);
-        attribute::get_val(attribute, &val);
-        val.val.i16 = static_cast<int16_t>(temp * 100);
-
-        attribute::update(endpoint_id, TemperatureMeasurement::Id, TemperatureMeasurement::Attributes::MeasuredValue::Id, &val);
-    });
-}
-
-// Application cluster specification, 2.6.4.1. MeasuredValue Attribute
-// represents the humidity in percent.
-// humidity = (humidity in %) x 100
-static void humidity_sensor_notification(uint16_t endpoint_id, float humidity, void *user_data)
-{
-    // schedule the attribute update so that we can report it from matter thread
-    chip::DeviceLayer::SystemLayer().ScheduleLambda([endpoint_id, humidity]() {
-        attribute_t * attribute = attribute::get(endpoint_id,
-                                                 RelativeHumidityMeasurement::Id,
-                                                 RelativeHumidityMeasurement::Attributes::MeasuredValue::Id);
-
-        esp_matter_attr_val_t val = esp_matter_invalid(NULL);
-        attribute::get_val(attribute, &val);
-        val.val.u16 = static_cast<uint16_t>(humidity * 100);
-
-        attribute::update(endpoint_id, RelativeHumidityMeasurement::Id, RelativeHumidityMeasurement::Attributes::MeasuredValue::Id, &val);
-    });
-}
-
 static void occupancy_sensor_notification(uint16_t endpoint_id, bool occupancy, void *user_data)
 {
     // schedule the attribute update so that we can report it from matter thread
@@ -164,7 +126,26 @@ extern "C" void app_main()
     ABORT_APP_ON_FAILURE(ESP_OK == err, ESP_LOGE(TAG, "Failed to initialize reset button, err:%d", err));
 
     /* Create a Matter node and add the mandatory Root Node device type on endpoint 0 */
-    node::config_t node_config;
+    node::config_t node_config{}; // Explicitly zero-initialize
+
+    // --- BEGIN CUSTOM DEVICE INFO CONFIGURATION ---
+    // When 'Device Info Provider' is 'Custom' (via menuconfig),
+    // core device identity (VID, PID, names, versions) is primarily expected
+    // from the factory NVS partition.
+    // Kconfig settings under "Device Basic Information" provide other fields.
+    // We will only set the node_label here if we want to override the Kconfig value at runtime.
+
+    // Basic Information Cluster Configuration for Root Node
+    // Set a node_label (user-visible device name for this node).
+    // This overrides any node_label set via Kconfig.
+    // If not set here, the Kconfig value (if any) will be used.
+    // strncpy(node_config.root_node.basic_information.node_label, "MyOccupancySensorRuntime", sizeof(node_config.root_node.basic_information.node_label) - 1);
+    // node_config.root_node.basic_information.node_label[sizeof(node_config.root_node.basic_information.node_label) - 1] = '\0'; // Ensure null termination
+
+    // Identify Cluster on Root Node is mandatory and typically initialized by default by the SDK.
+
+    // --- END CUSTOM DEVICE INFO CONFIGURATION ---
+
     node_t *node = node::create(&node_config, app_attribute_update_cb, app_identification_cb);
     ABORT_APP_ON_FAILURE(node != nullptr, ESP_LOGE(TAG, "Failed to create Matter node"));
 
