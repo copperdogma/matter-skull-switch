@@ -41,35 +41,33 @@
   - [ ] GPIO input test with PIR
 - [x] Development Environment Setup:
   - [x] Install ESP-IDF v5.1 or newer (via PlatformIO for local basic tests)
-  - [x] Set up Matter Docker container (Pulled espressif/esp-matter image and created start script) - **Primary environment for Matter development**
-  - [x] Add `esp-matter` SDK as a project component (Inside Docker)
-    - Note: Added `espressif/esp_matter^1.4.0` as a dependency to a dummy `main` component using `idf.py add-dependency` inside the running Matter Docker container. Verified by a successful PlatformIO build from the IDE.
-  - [x] Configure Matter development certificates (Generate test DAC) (Inside Docker)
+  - [x] Add `esp-matter` SDK as a project component
+    - Note: Added `espressif/esp_matter^1.4.0` as a dependency to a dummy `main` component using `idf.py add-dependency`. Verified by a successful PlatformIO build from the IDE.
+  - [x] Configure Matter development certificates (Generate test DAC)
     - Generated test certificates and factory partition using `chip-cert` for CD and PAA, then `esp-matter-mfg-tool` for DAC/PAI and factory partition. Files stored in `matter_certs/` directory.
   - [ ] MAKE SURE .gitignore is set up properly becuase we've created a LOT of stuff that we don't want to commit. QR codes? certificates? etc
-  - [ ] MAYBE LATER: Set up debugging tools (Configure `platformio.ini` for ESP32-S3 JTAG, potentially use with Docker)
-  - [ ] Configure `sdkconfig` for Matter (Enable Matter, set device type) (Inside Docker via `idf.py menuconfig`)
-  - [ ] Review and finalize `platformio.ini` settings (For both local basic tests and Docker interaction)
+  - [ ] MAYBE LATER: Set up debugging tools (Configure `platformio.ini` for ESP32-S3 JTAG)
+  - [ ] Configure `sdkconfig` for Matter (Enable Matter, set device type) (via `idf.py menuconfig`)
+  - [ ] Review and finalize `platformio.ini` settings (For local basic tests)
   - [x] Configure version control (Git already initialized)
 
 **--- Development Environment Transition Point ---**
-*For tasks below this line, all development, compilation, and flashing should be performed INSIDE the Matter Docker container using `idf.py` commands.*
-*Code editing can still be done in your local IDE (Cursor), as the project directory is mounted into the container.*
+*For tasks below this line, all development, compilation, and flashing should use `idf.py` commands.*
 
-- [ ] Basic Firmware Implementation (Phase 1 - Initial tests in Local PlatformIO, then transition to Docker for Matter integration):
+- [ ] Basic Firmware Implementation (Phase 1 - Initial tests in Local PlatformIO):
   - [ ] Upload basic firmware to ESP32-S3
     - idf.py -p /dev/tty.usbmodem101 flash monitor
-  - [ ] Hello World test program (Can start locally with PlatformIO, then build in Docker)
-  - [ ] **Implement PIR sensor driver and logic:**
-    - [ ] Write/Adapt PIR sensor driver (`drivers/pir.c` or similar).
-    - [ ] Implement interrupt handling for PIR sensor.
-    - [ ] Update OccupancySensing cluster on Endpoint 1 based on PIR state.
-    - [ ] Test PIR detection and Matter attribute updates.
-  - [ ] LED status indicators (Basic control locally, more complex status with Matter in Docker)
-  - [ ] Basic state management (Initial logic locally, integrate with Matter states in Docker)
-- [ ] Matter Integration (All tasks to be performed INSIDE Docker container):
+  - [ ] Hello World test program (Can start locally with PlatformIO)
+  - [x] **Implement PIR sensor driver and logic:**
+    - [x] Write/Adapt PIR sensor driver (`drivers/pir_sensor.c` & `drivers/include/pir_sensor.h`).
+    - [x] Implement interrupt handling for PIR sensor.
+    - [x] Update OccupancySensing cluster on Endpoint 1 based on PIR state.
+    - [x] Test PIR detection and Matter attribute updates.
+  - [ ] LED status indicators (Basic control locally)
+  - [ ] Basic state management (Initial logic locally)
+- [ ] Matter Integration
   - [ ] Basic device setup
-  - [ ] QR code provisioning
+  - [x] QR code provisioning
   - [ ] HomeKit pairing validation
   - [ ] OccupancySensing cluster (0x0406)
   - [ ] Delay attribute configuration
@@ -90,12 +88,17 @@
 - [ ] Document development setup process
 - [ ] Create hardware assembly guide:
   - [ ] Wiring diagram
+  - [ ] **Final Wiring Plan:**
+    - [ ] Use Dupont connectors directly to ESP32 pins for PIR sensor and LED.
+    - [ ] Rationale: One-off project, fixed installation in an old mini HDD case, simple component setup.
+    - [ ] Considerations: Ensure snug Dupont connector fit. Optional: a small dab of non-conductive hot glue at connector bases for stability. Unused ESP32 pins to be left as-is inside the enclosure.
   - [ ] Mounting instructions
   - [ ] Configuration steps
 - [ ] Document Matter integration:
   - [ ] QR code generation process
   - [ ] HomeKit setup instructions
   - [ ] Configuration options
+  - PIR lens integration 
 
 ## Testing
 - [ ] Functionality Testing:
@@ -188,3 +191,6 @@
         - Investigate the Kconfig files to resolve these warnings and informational messages.
         - Ensure `SEC_CERT_DAC_PROVIDER` is correctly and singularly defined, as it's critical for Matter device attestation. This could be linked to the `E (587) esp_matter_cluster: Config is NULL or mandatory features are missing` runtime error.
         - Consolidate or clarify the definitions for the `ENV_...` symbols within `espressif__esp_bsp_generic/Kconfig` or other relevant Kconfig files to remove redundancy. 
+        - Add specific warning: `default on the choice symbol SEC_CERT_DAC_PROVIDER ... will have no effect`
+        - Add specific warning: `the choice symbol SEC_CERT_DAC_PROVIDER ... is defined with a prompt outside the choice`
+        - Add specific warning: Multiple symbols (`SEC_CERT_DAC_PROVIDER`, `ENV_MAX_LEDS`, `ENV_GPIO_RANGE_MIN`, `ENV_GPIO_RANGE_MAX`, `ENV_GPIO_IN_RANGE_MAX`, `ENV_GPIO_OUT_RANGE_MAX`) are reported as defined in multiple locations.
