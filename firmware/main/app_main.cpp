@@ -8,16 +8,22 @@
 
 #include <app/server/CommissioningWindowManager.h>
 #include <app/server/Server.h>
-#include <bsp/esp-bsp.h>
 #include <esp_err.h>
 #include <esp_log.h>
 #include <esp_matter.h>
 #include <esp_matter_ota.h>
 #include <nvs_flash.h>
 
+// Include the sdkconfig.h file to access Kconfig values
+#include "sdkconfig.h"
+
 #include <app_openthread_config.h>
 #include "app_reset.h"
 #include "utils/common_macros.h"
+
+// Button component direct include
+#include "iot_button.h"
+#include "button_gpio.h"
 
 // For VID/PID and Onboarding Codes (official example method)
 #include <app/server/OnboardingCodesUtil.h>
@@ -29,17 +35,25 @@
 // drivers implemented by this example
 #include <drivers/shtc3.h>
 #include "drivers/include/pir_sensor.h"
+#include "drivers/include/led_indicator.h"
 
 static const char *TAG = "app_main";
+
+// Use the Kconfig value directly
+#define DEFAULT_PIR_OCCUPIED_TO_UNOCCUPIED_DELAY_SECONDS CONFIG_PIR_OCCUPIED_TO_UNOCCUPIED_DELAY_SECONDS
 
 using namespace esp_matter;
 using namespace esp_matter::attribute;
 using namespace esp_matter::endpoint;
 using namespace chip::app::Clusters;
 
+// Define reset button GPIO
+#define BUTTON_GPIO CONFIG_BSP_BUTTON_GPIO
+#define BSP_BUTTON_NUM 0
+
 static void occupancy_sensor_notification(uint16_t endpoint_id, bool occupancy, void *user_data)
 {
-    // schedule the attribute update so that we can report it from matter thread
+    // Schedule the attribute update so that we can report it from matter thread
     chip::DeviceLayer::SystemLayer().ScheduleLambda([endpoint_id, occupancy]() {
         attribute_t * attribute = attribute::get(endpoint_id,
                                                  OccupancySensing::Id,
@@ -50,14 +64,42 @@ static void occupancy_sensor_notification(uint16_t endpoint_id, bool occupancy, 
         val.val.b = occupancy;
 
         attribute::update(endpoint_id, OccupancySensing::Id, OccupancySensing::Attributes::Occupancy::Id, &val);
+        
+        // Update LED state based on occupancy status
+        if (occupancy) {
+            // Motion detected - flash 3 times then stay bright
+            pir_led_indicator_set_blink();
+        } else {
+            // No occupancy - dim
+            pir_led_indicator_set_dim();
+        }
     });
 }
 
 static esp_err_t factory_reset_button_register()
 {
-    button_handle_t push_button;
-    esp_err_t err = bsp_iot_button_create(&push_button, NULL, BSP_BUTTON_NUM);
-    VerifyOrReturnError(err == ESP_OK, err);
+    // Create button configurations
+    button_config_t button_config = {
+        .long_press_time = 5000,     // 5 seconds for long press
+        .short_press_time = 50,      // 50ms for short press
+    };
+    
+    button_gpio_config_t gpio_config = {
+        .gpio_num = 0,               // Default GPIO 0 (Boot button)
+        .active_level = 0,           // Active low
+        .enable_power_save = false,  // No power save
+        .disable_pull = false,       // Use internal pull-up
+    };
+    
+    button_handle_t push_button = NULL;
+    
+    // Create the GPIO button device
+    esp_err_t err = iot_button_new_gpio_device(&button_config, &gpio_config, &push_button);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to create button device: %s", esp_err_to_name(err));
+        return err;
+    }
+    
     return app_reset_button_register(push_button);
 }
 
@@ -123,6 +165,20 @@ static esp_err_t app_attribute_update_cb(attribute::callback_type_t type, uint16
     return ESP_OK;
 }
 
+static void initialize_occupancy_sensor()
+{
+    ESP_LOGI(TAG, "Initializing occupancy sensor with timeout of %d seconds", DEFAULT_PIR_OCCUPIED_TO_UNOCCUPIED_DELAY_SECONDS);
+
+    /* Initialize PIR Sensor */
+    pir_sensor_config_t pir_config = {
+        // removed .gpio_num field as it doesn't exist in the structure
+    };
+    esp_err_t err = pir_sensor_init(&pir_config);
+    ABORT_APP_ON_FAILURE(err == ESP_OK, ESP_LOGE(TAG, "Failed to initialize PIR sensor: %d", err));
+
+    // ... existing code ...
+}
+
 extern "C" void app_main()
 {
     /* Initialize the ESP NVS layer */
@@ -131,6 +187,10 @@ extern "C" void app_main()
     /* Initialize push button on the dev-kit to reset the device */
     esp_err_t err = factory_reset_button_register();
     ABORT_APP_ON_FAILURE(ESP_OK == err, ESP_LOGE(TAG, "Failed to initialize reset button, err:%d", err));
+
+    // Initialize LED indicator
+    err = pir_led_indicator_init(CONFIG_LED_INDICATOR_GPIO_NUM);
+    ABORT_APP_ON_FAILURE(err == ESP_OK, ESP_LOGE(TAG, "Failed to initialize LED indicator, err:%d", err));
 
     /* Create a Matter node and add the mandatory Root Node device type on endpoint 0 */
     node::config_t node_config{}; // Explicitly zero-initialize
@@ -171,7 +231,7 @@ extern "C" void app_main()
         cluster_t *occupancy_cluster = cluster::get(occupancy_sensor_ep, OccupancySensing::Id);
         if (occupancy_cluster) {
             uint32_t delay_attr_id = OccupancySensing::Attributes::PIROccupiedToUnoccupiedDelay::Id;
-            esp_matter_attr_val_t default_val = esp_matter_uint16(900); // 15 minutes = 900 seconds
+            esp_matter_attr_val_t default_val = esp_matter_uint16(DEFAULT_PIR_OCCUPIED_TO_UNOCCUPIED_DELAY_SECONDS); // Use default value
             attribute_t *delay_attribute = attribute::get(occupancy_cluster, delay_attr_id);
 
             if (!delay_attribute) {
@@ -180,15 +240,13 @@ extern "C" void app_main()
                                   ATTRIBUTE_FLAG_WRITABLE | ATTRIBUTE_FLAG_NONVOLATILE,
                                   default_val);
             } else {
-                ESP_LOGI(TAG, "PIROccupiedToUnoccupiedDelay attribute exists. Ensuring default if 0.");
+                ESP_LOGI(TAG, "PIROccupiedToUnoccupiedDelay attribute exists. Setting to our configured value.");
                 esp_matter_attr_val_t current_val;
                 if (attribute::get_val(delay_attribute, &current_val) == ESP_OK) {
-                    if (current_val.val.u16 == 0) { // Matter spec default is 0, override with our default.
-                        ESP_LOGI(TAG, "Setting PIROccupiedToUnoccupiedDelay to default %d s", default_val.val.u16);
-                        attribute::update(endpoint::get_id(occupancy_sensor_ep), OccupancySensing::Id, delay_attr_id, &default_val);
-                    } else {
-                        ESP_LOGI(TAG, "PIROccupiedToUnoccupiedDelay already has a value: %d s", current_val.val.u16);
-                    }
+                    // Always set to our Kconfig-defined default value on startup
+                    ESP_LOGI(TAG, "Setting PIROccupiedToUnoccupiedDelay from %d s to default %d s", 
+                            current_val.val.u16, default_val.val.u16);
+                    attribute::update(endpoint::get_id(occupancy_sensor_ep), OccupancySensing::Id, delay_attr_id, &default_val);
                 }
                 // Ensuring flags are set (Note: esp-matter might not support changing flags post-creation easily.
                 // If flags are incorrect, attribute might need to be re-created or SDK modified.
@@ -244,6 +302,6 @@ extern "C" uint16_t get_pir_unoccupied_delay_seconds(uint16_t endpoint_id)
             }
         }
     }
-    ESP_LOGW(TAG, "Failed to get PIROccupiedToUnoccupiedDelay for ep %d, returning default 15s", endpoint_id);
-    return 900; // Default to 15 minutes (900 seconds) if attribute not found or value is 0
+    ESP_LOGW(TAG, "Failed to get PIROccupiedToUnoccupiedDelay for ep %d, returning default %ds", endpoint_id, DEFAULT_PIR_OCCUPIED_TO_UNOCCUPIED_DELAY_SECONDS);
+    return DEFAULT_PIR_OCCUPIED_TO_UNOCCUPIED_DELAY_SECONDS; // Default to configured value if attribute not found or value is 0
 }

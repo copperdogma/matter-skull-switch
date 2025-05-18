@@ -28,4 +28,23 @@ menu "Occupancy Sensor Configuration"
         help
             GPIO pin number where the PIR sensor output is connected.
             Default is 4.
+            
+    config LED_INDICATOR_GPIO_NUM
+        int "LED Indicator GPIO Pin Number"
+        default 6
+        range 0 48
+        help
+            GPIO pin number for the LED status indicator.
+            Dim when "on", bright blinking when "motion detected".
+            Default is 6 (on the same side as the PIR sensor pin).
+            
+    config PIR_OCCUPIED_TO_UNOCCUPIED_DELAY_SECONDS
+        int "PIR Occupied to Unoccupied Delay (seconds)"
+        default 10
+        range 5 1800
+        help
+            Time in seconds before the occupancy sensor reports unoccupied after 
+            the last motion detection. Industry standard ranges from 30 seconds 
+            to 30 minutes (1800 seconds). Default value is 10 seconds for testing.
+            For production, 5-15 minutes (300-900 seconds) is typical.
 endmenu

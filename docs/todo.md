@@ -44,18 +44,18 @@
   - [x] Implement interrupt handling for PIR sensor
   - [x] Update OccupancySensing cluster on Endpoint 1 based on PIR state
   - [x] Test PIR detection and Matter attribute updates
-- [ ] Basic Firmware Implementation:
-  - [ ] Upload basic firmware to ESP32-S3
-  - [ ] LED status indicators
-  - [ ] Basic state management
+- [x] Basic Firmware Implementation:
+  - [x] Upload basic firmware to ESP32-S3
+  - [x] LED status indicators. Pick a GPIO pin, use PWM: dim for "on", bright blinking for "motion detected". using 220Ω resistor.
+  - [ ] SKIPPING THIS: [Apple Home doesn't suport it in the UI] Basic state management
 
 ### Matter Integration
 - [ ] Matter Integration:
   - [x] QR code provisioning
-  - [ ] HomeKit pairing validation
+  - [x] HomeKit pairing validation
   - [x] OccupancySensing cluster (0x0406)
   - [x] Delay attribute configuration
-  - [ ] Settings persistence
+  - [ ] SKIPPING THIS: [Apple Home doesn't suport it in the UI] Settings persistence
 
 ## Research Tasks
 - [x] Research ESP32-S3 Matter examples/implementations:
@@ -64,7 +64,6 @@
   - [x] Analyze ESP32 Matter commissioning flow
 - [ ] Investigate PIR sensor mounting:
   - [ ] Test sensitivity ranges
-  - [ ] Evaluate lens coverage patterns
   - [ ] Determine optimal mounting height/angle
 
 ## Documentation
@@ -74,6 +73,7 @@
   - [ ] Wiring diagram
   - [ ] Final Wiring Plan:
     - [ ] Use Dupont connectors directly to ESP32 pins for PIR sensor and LED
+    - [ ] Make GND pigtail to ESP32 GND because we need two ground connections (PIR sensor and LED)
     - [ ] Add small dab of non-conductive hot glue at connector bases for stability
 
 ## Testing

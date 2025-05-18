@@ -25,7 +25,28 @@
             *   Confirm through device logs or behavior that the new delay is used.
             *   Reboot the ESP32 and confirm the setting persists and is used.
 
+- [x] **LED status indicators:**
+    - **Goal:** Implement LED status indicators for device state feedback.
+    - **Tasks:**
+        1. **LED Driver Implementation:** (Completed)
+           * Created `led_indicator.h` and `led_indicator.c` with PWM functionality.
+           * Implemented dim state (constant low brightness) for normal operation.
+           * Implemented bright blinking state for motion detection.
+        2. **Integration with Occupancy Detection:** (Completed)
+           * Updated `occupancy_sensor_notification` function to control LED state.
+           * LED goes to dim mode when no motion is detected.
+           * LED enters bright blinking mode when motion is detected.
+        3. **Configuration:** (Completed)
+           * Added `LED_INDICATOR_GPIO_NUM` to Kconfig for easy pin selection.
+           * Default value set to GPIO 5 (on the same side as PIR sensor pin).
+        4. **Documentation:** (Completed)
+           * Created `docs/docs/led_indicator.md` with details on usage and implementation.
+
 ### Completed Tasks (Recent First)
+- Implemented LED status indicator for device state feedback
+  - Created PWM-based LED driver with dim and bright blinking states
+  - Integrated with occupancy detection state
+  - Added documentation in docs/docs/led_indicator.md
 - Implemented configurable `PIROccupiedToUnoccupiedDelay` attribute for Occupancy Sensor.
   - Modified `app_main.cpp` to create/manage the Matter attribute.
   - Added a C-callable helper in `app_main.cpp` to get the delay value.
@@ -36,6 +57,8 @@
 - None currently for this specific task.
 
 ### Decisions Made
+- LED indicator will use GPIO 5 (default) which is on the same side as the PIR sensor (GPIO 4).
+- LED will be dim when the device is on (no motion) and bright blinking when motion is detected.
 - The `PIROccupiedToUnoccupiedDelay` attribute will be made writable and non-volatile.
 - Default delay will be set to 15 minutes (900 seconds). **Decision Rationale:** This value balances user convenience (especially for garage-like spaces where someone might be still for periods) and energy savings, and aligns with common industry practices. It remains configurable via Matter for future adjustments if needed, even if not directly exposed in all controller UIs like Apple Home.
 - Apple Home does not currently offer a direct UI control for `PIROccupiedToUnoccupiedDelay`, but the attribute is supported by the Matter OccupancySensing cluster specification.
@@ -43,6 +66,11 @@
 ### Reference Information
 - **ESP32 Device Node ID (from logs):** `0x000000002FF3D579` (Hex) / `133000000057` (Decimal)
 ### Log of Recent Actions & Status
+- Implemented LED status indicator using PWM via LEDC peripheral
+- Created LED driver with dim and bright blinking states
+- Integrated LED control with occupancy detection
+- Added Kconfig option for LED GPIO pin
+- Created documentation for the LED indicator feature
 - Researched if Apple Home supports UI for `PIROccupiedToUnoccupiedDelay`: Conclusion - Not directly in the UI, but the attribute is part of the Matter spec.
 - Researched and decided on a default occupancy timeout: 15 minutes (900 seconds).
 - Updated `README.md` with the default timeout and reasoning.
@@ -75,4 +103,8 @@
 - [x] Identified ESP32 Node ID from device logs: `0x000000002FF3D579` (Hex) / `133000000057` (Decimal).
 - [x] Investigated Apple Home UI support for `PIROccupiedToUnoccupiedDelay` (Conclusion: No direct UI, but attribute is supported by Matter).
 - [x] Researched and documented a suitable default for `PIROccupiedToUnoccupiedDelay` (15 minutes / 900 seconds) in `README.md`.
+- [x] Implemented LED status indicator with dim (normal) and bright blinking (motion detected) states.
+- [x] Integrated LED control with occupancy detection system.
+- [x] Added Kconfig option for selecting LED GPIO pin.
+- [x] Created documentation for the LED indicator feature.
 

@@ -77,8 +77,9 @@ static void pir_sensor_task(void* arg)
                 // The PIR output going LOW doesn't immediately mean UNOCCUPIED from Matter's perspective.
                 // The g_unoccupied_timer handles the transition to UNOCCUPIED.
                 // We log this event for debugging but don't change g_occupancy_state here.
-                ESP_LOGI(TAG, "PIR output LOW (raw signal). Occupancy state remains %s until timer expires.", 
-                         g_occupancy_state ? "OCCUPIED" : "UNOCCUPIED");
+                uint16_t delay_seconds = get_pir_unoccupied_delay_seconds(g_pir_config.endpoint_id);
+                ESP_LOGI(TAG, "PIR output LOW (raw signal). Occupancy state remains %s until %us timer expires.", 
+                         g_occupancy_state ? "OCCUPIED" : "UNOCCUPIED", delay_seconds);
             }
         }
     }
