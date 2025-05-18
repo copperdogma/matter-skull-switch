@@ -130,7 +130,7 @@
   - PIR lens integration 
 
 ## Console Log Analysis - High Priority Issues (2025-05-17)
-- [ ] **Monitor (Previously Critical):** `E (587) esp_matter_cluster: Config is NULL or mandatory features are missing.`
+- [ ] NOT FIXING THIS:**Monitor (Previously Critical):** `E (587) esp_matter_cluster: Config is NULL or mandatory features are missing.`
     - Context: Occurs immediately after `factory_reset_button_register()` and during `esp_matter::node::create(&node_config, ...)`. Potentially indicates an issue with root node (Endpoint 0) or its mandatory cluster (Basic Info, Identify, Descriptor) initialization.
     - Current Status: The error persists. However, the device appears to commission and function as an occupancy sensor in the Home app. This error is now considered lower priority but should be monitored. If other issues arise that could be related to Endpoint 0 instability, this error might need to be revisited.
     - Github file where this error is thrown in the esp-matter repo: https://github.com/espressif/esp-matter/blob/057ac6a3e06f29a8a6f0e942228d01064e6942d3/components/esp_matter/esp_matter_cluster.cpp#L702
@@ -158,7 +158,7 @@
         - Monitor if this error persists, especially after factory resets and re-commissioning.
         - If problematic, ensure Endpoint 0 Descriptor does not list OnOff.
         - This is secondary to PIR sensor functionality but important for full compliance.
-- [ ] **Error:** `E (77757) chip[SC]: The device does not support GetClock_RealTimeMS() API: 6c. Falling back to Last Known Good UTC Time` (Repeated at `E (86917)`)
+- [ ] NOT FIXING THIS: **Error:** `E (77757) chip[SC]: The device does not support GetClock_RealTimeMS() API: 6c. Falling back to Last Known Good UTC Time` (Repeated at `E (86917)`)
     - Context: Occurs during secure session (CASE) establishment. Indicates the underlying platform (ESP-IDF) isn't providing an expected millisecond-precision real-time clock API. The Matter stack needs accurate time for certificate validation and other functions. Error `6c` suggests `CHIP_ERROR_UNSUPPORTED_CHIP_FEATURE`.
     - Investigation: Confirmed Freenove ESP32-S3 has a 32kHz crystal. Changed RTC clock source to "External 32 kHz crystal" in `menuconfig`, but this did not resolve the warning. SNTP is enabled. **Reverted RTC clock source to the default "Internal 136 kHz RC oscillator" as the device functions correctly with it and the change did not impact the warning.**
     - Status (YYYY-MM-DD): **Commissioning is successful and device operates as expected despite this error still appearing in logs.** The error is now considered a low-priority warning. See GitHub issue: [https://github.com/espressif/esp-matter/issues/1095](https://github.com/espressif/esp-matter/issues/1095)

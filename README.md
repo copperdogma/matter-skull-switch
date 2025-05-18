@@ -136,15 +136,27 @@ The following connection details are from the original `sensors` example and are
 5. Initial Setup & Commissioning
 
 These instructions are for testing the sensor clusters using `chip-tool`.
+For commissioning with a controller like Apple Home, the primary source for the QR code and manual pairing code is the **serial monitor output immediately after flashing and booting the device.** Look for lines similar to:
+```
+I (xxxx) chip[SVR]: SetupQRCode: [MT:YYYYYYYYYYYYYYY]
+I (xxxx) chip[SVR]: Copy/paste the below URL in a browser to see the QR Code:
+I (xxxx) chip[SVR]: https://project-chip.github.io/connectedhomeip/qrcode.html?data=MT%3AYYYYYYYYYYYYYYY
+I (xxxx) chip[SVR]: Manual pairing code: [XXXXXXXXXXX]
+```
+The current, working codes for this project (as of the latest tests) are:
+- **QR Code Payload:** `MT:Y.K90GSY00KA0648G00`
+- **QR Code URL:** `https://project-chip.github.io/connectedhomeip/qrcode.html?data=MT%3AY.K90GSY00KA0648G00`
+- **Manual Pairing Code:** `34970112332`
 
-- Commission the app using a Matter controller.
+- Commission the app using a Matter controller (like Apple Home using the QR code from the monitor, or `chip-tool`).
 - Read the attributes.
 
 Below, we are using `chip-tool` to commission and subscribe the sensor attributes.
 ```bash
-# Commission (replace with your device's actual discriminator and setup PIN if different)
-# Ensure your device is in commissioning mode (e.g., via a button press if implemented)
-# Run chip-tool from the connected-home-ip build directory
+# Commission (replace YOUR_SSID YOUR_PASSPHRASE. Use the setup PIN from the serial monitor if different from the example below)
+# Ensure your device is in commissioning mode (e.g., via a button press if implemented, or automatically on first boot/after factory reset)
+# The discriminator (e.g., 3840) should also match what's shown in the device logs if it differs from the example.
+# The setup PIN 20202021 is a common test PIN. If your device logs a different manual pairing code, use that.
 chip-tool pairing ble-wifi 1 YOUR_SSID YOUR_PASSPHRASE 20202021 3840
 
 # Start chip-tool in interactive mode
@@ -222,38 +234,36 @@ Keeping these detailed instructions centralized in `SETUP.MD` helps avoid duplic
 
 This section collects important, non-obvious findings during development. This information will be integrated into the main documentation later.
 
-### Matter Commissioning Codes (QR Code & Manual Setup)
+### Matter Commissioning Codes (QR Code & Manual Setup) - Updated Understanding
 
-A critical aspect of getting an ESP32-Matter device to commission with a controller (like Apple Home) is using the **correct and current commissioning codes**.
+A critical aspect of getting an ESP32-Matter device to commission with a controller (like Apple Home) is using the **correct and current commissioning codes, obtained from the device's serial monitor output after flashing and booting.**
 
-1.  **Dynamic vs. Fixed Codes:**
-    *   **Default Behavior (Most Examples):** When flashing a standard ESP-Matter example (like `light` or `sensor`) without a specially prepared "factory partition" containing fixed credentials, the device will often use default test parameters or generate new ones upon first boot or after a full re-flash (e.g., after `idf.py fullclean`).
-    *   **Factory Partition (Advanced):** For production or consistent testing, a factory partition can be created (e.g., using `mfg_tool.py`) and flashed to the device. This embeds fixed commissioning parameters (VID, PID, passcode, discriminator), and the QR code/manual code associated with these parameters would remain persistent across application flashes.
-
-2.  **Finding the Correct Codes:**
-    *   **Serial Monitor is Key:** The primary source for current commissioning information is the **serial monitor output** immediately after flashing and booting the device.
-    *   **Explicit QR/Manual Code Logs:** Look for lines similar to:
+1.  **Primacy of Serial Monitor Output:**
+    *   The **serial monitor output** is the definitive source for the active QR code payload string (e.g., `MT:Y.K90GSY00KA0648G00`), the URL to generate the QR code image, and the manual pairing code (e.g., `34970112332`).
+    *   Look for lines similar to these after the device boots:
         ```
-        I (xxxx) esp_matter_qrcode: Manual pairing code: XXXXXXXXXXX
-        I (xxxx) esp_matter_qrcode: Onboarding QRCode: MT:YYYYYYYYYYYYYYY
+        I (xxxx) chip[SVR]: SetupQRCode: [MT:YYYYYYYYYYYYYYY]
+        I (xxxx) chip[SVR]: Copy/paste the below URL in a browser to see the QR Code:
+        I (xxxx) chip[SVR]: https://project-chip.github.io/connectedhomeip/qrcode.html?data=MT%3AYYYYYYYYYYYYYYY
+        I (xxxx) chip[SVR]: Manual pairing code: [XXXXXXXXXXX]
         ```
-        If these are present, use them. The `MT:` string is the payload for QR code generation.
-    *   **Commission Parameter Log:** If the explicit QR code logs are *not* present (as was the case with the `light` example on ESP32-S3 during recent tests), look for a line like:
-        ```
-        I (xxxx) chip[DIS]: Advertise commission parameter vendorID=AAAAA productID=BBBBB discriminator=CCCC/DD ...
-        ```
-        This provides:
-        *   `vendorID` (VID)
-        *   `productID` (PID)
-        *   `discriminator` (Long discriminator is `CCCC`, short is often derived or part of the `DD`)
-    *   **Default Test Passcode:** In the absence of an explicitly logged manual code, and if the device is using default test configurations (often true for examples), the **standard Matter test passcode `20202021`** should be attempted for manual pairing.
-        *   **Experience:** For the `light` example on an ESP32-S3, when explicit QR/manual code logs were missing, using the manual setup code `20202021` with Apple Home worked successfully. The device advertised `vendorID=65521`, `productID=32768`, and `discriminator=3840`.
+    *   The `PrintOnboardingCodes()` function call in `firmware/main/app_main.cpp` (specifically after `esp_matter::start()`) is responsible for generating this output.
 
-3.  **CRITICAL - Do NOT Reuse Old Codes:**
-    *   Using a QR code or manual setup code from a *previous example build*, a *different project*, or a *generic SDK setup document* is highly likely to **FAIL**.
-    *   The inability to commission the `sensor` example in earlier attempts (approx. 50 tries) was very likely due to repeatedly using a stale QR code that was no longer valid for the flashed firmware. Each significant re-flash (especially after a `fullclean`) can reset these dynamic credentials.
+2.  **Code Stability and Factory NVS:**
+    *   **Current Project State:** With the current firmware and no factory NVS partition explicitly providing fixed credentials, the device generates consistent commissioning codes as long as the underlying NVS data related to Matter fabrics and basic commissioning info isn't wiped or significantly altered by `menuconfig` settings.
+    *   **Factory NVS Partition (Advanced):** If a factory NVS partition (e.g., `mfg_nvs.bin` created with `esp-matter-mfg-tool`) is flashed with specific VID, PID, passcode, and discriminator, the device *should* use these fixed credentials, leading to a persistent QR code and manual code. The serial monitor would then reflect these fixed values. Refer to `SETUP.MD` for details on generating and flashing a factory NVS partition.
+    *   **Factory Reset:** A factory reset (e.g., holding the BOOT button) clears commissioned fabrics from the main NVS but typically leaves the factory NVS partition (if present) untouched. The device would then re-advertise for commissioning using the credentials from the factory NVS or generate new ones if no factory NVS is present/valid.
 
-**Always ensure you are using the commissioning information that corresponds to the exact firmware binary currently running on the device.**
+3.  **Why Old Codes Fail:**
+    *   Using a QR code or manual setup code from a *previous example build*, a *different project*, documentation, or a stale image file (like `qrcode.png` files that might be stored in the project from earlier experiments) is highly likely to **FAIL**.
+    *   Each significant re-flash (especially after a `fullclean` or changes to core Matter configuration in `menuconfig` that aren't overridden by a factory NVS) can potentially alter the parameters used to generate the commissioning codes if they are not fixed by a factory partition.
+
+**Always prioritize the commissioning information printed in the serial monitor for the exact firmware binary currently running on the device.**
+
+The current, working codes for this project (as of the latest tests that successfully commissioned with Apple Home):
+- **QR Code Payload:** `MT:Y.K90GSY00KA0648G00`
+- **QR Code URL:** `https://project-chip.github.io/connectedhomeip/qrcode.html?data=MT%3AY.K90GSY00KA0648G00`
+- **Manual Pairing Code:** `34970112332`
 
 ### Controller Behavior Observations (Apple Home)
 
