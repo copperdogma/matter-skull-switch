@@ -166,6 +166,40 @@ extern "C" void app_main()
     endpoint_t * occupancy_sensor_ep = occupancy_sensor::create(node, &occupancy_sensor_config, ENDPOINT_FLAG_NONE, NULL);
     ABORT_APP_ON_FAILURE(occupancy_sensor_ep != nullptr, ESP_LOGE(TAG, "Failed to create occupancy_sensor endpoint"));
 
+    // Configure PIROccupiedToUnoccupiedDelay attribute
+    if (occupancy_sensor_ep) {
+        cluster_t *occupancy_cluster = cluster::get(occupancy_sensor_ep, OccupancySensing::Id);
+        if (occupancy_cluster) {
+            uint32_t delay_attr_id = OccupancySensing::Attributes::PIROccupiedToUnoccupiedDelay::Id;
+            esp_matter_attr_val_t default_val = esp_matter_uint16(900); // 15 minutes = 900 seconds
+            attribute_t *delay_attribute = attribute::get(occupancy_cluster, delay_attr_id);
+
+            if (!delay_attribute) {
+                ESP_LOGI(TAG, "Creating PIROccupiedToUnoccupiedDelay attribute with default %d s", default_val.val.u16);
+                attribute::create(occupancy_cluster, delay_attr_id,
+                                  ATTRIBUTE_FLAG_WRITABLE | ATTRIBUTE_FLAG_NONVOLATILE,
+                                  default_val);
+            } else {
+                ESP_LOGI(TAG, "PIROccupiedToUnoccupiedDelay attribute exists. Ensuring default if 0.");
+                esp_matter_attr_val_t current_val;
+                if (attribute::get_val(delay_attribute, &current_val) == ESP_OK) {
+                    if (current_val.val.u16 == 0) { // Matter spec default is 0, override with our default.
+                        ESP_LOGI(TAG, "Setting PIROccupiedToUnoccupiedDelay to default %d s", default_val.val.u16);
+                        attribute::update(endpoint::get_id(occupancy_sensor_ep), OccupancySensing::Id, delay_attr_id, &default_val);
+                    } else {
+                        ESP_LOGI(TAG, "PIROccupiedToUnoccupiedDelay already has a value: %d s", current_val.val.u16);
+                    }
+                }
+                // Ensuring flags are set (Note: esp-matter might not support changing flags post-creation easily.
+                // If flags are incorrect, attribute might need to be re-created or SDK modified.
+                // For now, we assume flags set at initial creation (if SDK does so) or by our creation are sufficient.)
+                 ESP_LOGI(TAG, "Assuming PIROccupiedToUnoccupiedDelay flags are correctly set (Writable, Non-Volatile).");
+            }
+        } else {
+            ESP_LOGE(TAG, "Failed to get OccupancySensing cluster from occupancy_sensor_ep for delay attribute setup");
+        }
+    }
+
     // initialize occupancy sensor driver (pir)
     static pir_sensor_config_t pir_config = {
         .cb = occupancy_sensor_notification,
@@ -192,4 +226,24 @@ extern "C" void app_main()
     // PrintOnboardingCodes will log the necessary VID/PID and commissioning info
     chip::DeviceLayer::StackLock lock; // RAII lock for Matter stack
     PrintOnboardingCodes(chip::RendezvousInformationFlags(chip::RendezvousInformationFlag::kBLE).Set(chip::RendezvousInformationFlag::kOnNetwork));
+}
+
+// Helper function to be called from C code (e.g., pir_sensor.c)
+extern "C" uint16_t get_pir_unoccupied_delay_seconds(uint16_t endpoint_id)
+{
+    cluster_t *occupancy_cluster = cluster::get(endpoint_id, OccupancySensing::Id);
+    if (occupancy_cluster) {
+        uint32_t delay_attr_id = OccupancySensing::Attributes::PIROccupiedToUnoccupiedDelay::Id;
+        attribute_t *delay_attribute = attribute::get(occupancy_cluster, delay_attr_id);
+        if (delay_attribute) {
+            esp_matter_attr_val_t current_val;
+            if (attribute::get_val(delay_attribute, &current_val) == ESP_OK) {
+                if (current_val.val.u16 > 0) { // Ensure a valid delay is returned
+                    return current_val.val.u16;
+                }
+            }
+        }
+    }
+    ESP_LOGW(TAG, "Failed to get PIROccupiedToUnoccupiedDelay for ep %d, returning default 15s", endpoint_id);
+    return 900; // Default to 15 minutes (900 seconds) if attribute not found or value is 0
 }

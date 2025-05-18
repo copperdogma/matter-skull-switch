@@ -21,6 +21,34 @@
   - Note: Instructions for sourcing env and setting target are now in SETUP.MD and README.md.
 - [ ] QR Code: Let's get our own device-specific QR code set up. I don't want to use the generic type-in code of 20202021. And I want us to be able to add the device with a QR code.
 
+## Deferred / Lower Priority (From Recent Implementation Work)
+
+- [ ] **Troubleshoot `chip-tool` Connectivity/Discovery Issues:**
+    - **Status:** Deferred.
+    - **Reason for Deferral:** User request. While `chip-tool` is valuable for diagnostics and direct attribute manipulation (e.g., testing the `PIROccupiedToUnoccupiedDelay`), the core sensor functionality with Apple Home and default settings is operational. This task involves deeper troubleshooting of network/fabric issues between `chip-tool` and the commissioned ESP32.
+    - **Background from `scratchpad.md`:**
+        - Last `chip-tool` attempt to read attributes resulted in extensive logs, suggesting it was trying to commission a new fabric rather than communicating with the existing one.
+        - Node ID: `0x000000002FF3D579` (Hex) / `133000000057` (Decimal), Endpoint: 1 (Occupancy Sensor).
+    - **Key Troubleshooting Steps (to revisit later):**
+        1.  Verify ESP32 is still properly commissioned to the Matter fabric `chip-tool` has credentials for. The tool might be operating on a different fabric context or lack the necessary operational credentials.
+        2.  Confirm network connectivity (same Wi-Fi, device reachable).
+        3.  Investigate `chip-tool`'s Key-Value Store (`chip_tool_kvs` path: `/var/folders/8f/3nlcf3sj1s5bbk1g_3dt3djm0000gn/T//chip_tool_kvs`) for correct fabric info, especially if the device was commissioned by Apple Home.
+        4.  Consider using `chip-tool pairing already-commissioned <NODE_ID> <existing_fabric_id_hex>` if `chip-tool` needs to be explicitly added to the fabric.
+        5.  Try simpler `chip-tool` commands (e.g., reading Basic Information cluster attributes like Vendor ID on Endpoint 0) to isolate communication issues:
+            `chip-tool basicinformation read vendor-id 133000000057 0`
+
+- [ ] **Test Configurable Occupancy Delay Behavior Extensively:**
+    - **Status:** Deferred.
+    - **Reason for Deferral:** Dependent on resolving `chip-tool` connectivity or finding an alternative method to easily modify the `PIROccupiedToUnoccupiedDelay` attribute. Current testing relies on the default value.
+    - **Goal (for later):** Set various short and long delay values and confirm:
+        - The PIR driver uses the new delay.
+        - The setting persists after device reboot.
+        - Matter reports reflect the correct occupancy state based on the custom delay.
+
+- [ ] **Address Kconfig Build Warnings (e.g., `SEC_CERT_DAC_PROVIDER`, `ENV_...` symbols):**
+    - **Status:** Deferred (also tracked under "Build Output Warnings" below, but reinforcing deferral).
+    - **Reason for Deferral:** These are non-fatal build-time warnings. The firmware compiles and the device operates. Cleaning these up is a good practice for polish but not critical for current functionality.
+
 ## High Priority
 - [x] Resolve outstanding questions from spec:
   - [x] Determine appropriate unoccupied delay time (15 minutes default, configurable 5-30 minutes)

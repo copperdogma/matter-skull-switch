@@ -9,9 +9,10 @@
 // ESP IDF timer includes
 #include "esp_timer.h"
 
-static const char *TAG = "pir_sensor";
+// Forward declaration for the C-callable function in app_main.cpp
+extern uint16_t get_pir_unoccupied_delay_seconds(uint16_t endpoint_id);
 
-#define UNOCCUPIED_DELAY_SEC 15 // Default to 15 seconds for now, will make configurable later
+static const char *TAG = "pir_sensor";
 
 // Queue to send GPIO events from ISR to a task
 static QueueHandle_t gpio_evt_queue = NULL;
@@ -53,7 +54,7 @@ static void pir_sensor_task(void* arg)
     for(;;) {
         if(xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
             bool current_level = gpio_get_level(io_num);
-            ESP_LOGI(TAG, "GPIO[%lu] intr, val: %d. Current g_occupancy_state: %s", 
+            ESP_LOGD(TAG, "GPIO[%lu] intr, val: %d. Current g_occupancy_state: %s", 
                      io_num, current_level, g_occupancy_state ? "OCCUPIED" : "UNOCCUPIED");
 
             if (current_level == 1) { // Motion detected (PIR output HIGH)
@@ -66,9 +67,11 @@ static void pir_sensor_task(void* arg)
                 }
                 // Whether previously occupied or not, if motion is detected, (re)start the unoccupied timer.
                 if (g_unoccupied_timer) {
+                    uint16_t delay_seconds = get_pir_unoccupied_delay_seconds(g_pir_config.endpoint_id);
+                    ESP_LOGI(TAG, "Using unoccupied delay of %u seconds from Matter attribute.", delay_seconds);
                     esp_timer_stop(g_unoccupied_timer);
-                    esp_timer_start_once(g_unoccupied_timer, UNOCCUPIED_DELAY_SEC * 1000000ULL);
-                    ESP_LOGI(TAG, "Unoccupied timer (re)started for %d seconds.", UNOCCUPIED_DELAY_SEC);
+                    esp_timer_start_once(g_unoccupied_timer, (uint64_t)delay_seconds * 1000000ULL);
+                    ESP_LOGI(TAG, "Unoccupied timer (re)started for %u seconds.", delay_seconds);
                 }
             } else { // Motion stopped (PIR output LOW - this happens after PIR's internal delay)
                 // The PIR output going LOW doesn't immediately mean UNOCCUPIED from Matter's perspective.
@@ -152,7 +155,7 @@ esp_err_t pir_sensor_init(const pir_sensor_config_t *config)
         return ret;
     }
 
-    ESP_LOGI(TAG, "PIR sensor initialized successfully with unoccupied delay of %d seconds.", UNOCCUPIED_DELAY_SEC);
+    ESP_LOGI(TAG, "PIR sensor initialized successfully. Unoccupied delay will be read from Matter attribute.");
     return ESP_OK;
 }
 

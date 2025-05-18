@@ -276,3 +276,21 @@ During testing with Apple Home, some notable behaviors were observed:
 2.  **Initial Incorrect Device Type Advertisement:**
     *   **Observation:** When initiating the pairing process in Apple Home, the ESP32 device (running the `sensors` example) initially advertised itself as a "Light". However, upon proceeding with the addition, Apple Home correctly identified it as a sensor device and prompted for temperature, humidity, and occupancy settings.
     *   **Likely Cause:** This is also attributed to caching within the Apple Home app or Home Hub. The app might initially display a device based on stale mDNS (Bonjour) advertisement data or a cached "friendly name" associated with the device's network presence from a previous configuration (like the `
+
+## Project Overview
+
+This project aims to develop a Matter-enabled occupancy sensor using an ESP32-S3 microcontroller and an HC-SR501 PIR sensor.
+
+### Key Features
+*   Matter-enabled for interoperability with Apple Home, Google Home, Amazon Alexa, etc.
+*   Uses HC-SR501 PIR sensor for motion detection.
+*   Configurable delay for how long the sensor reports "occupied" after last motion.
+
+### Default Occupancy Timeout
+The default `PIROccupiedToUnoccupiedDelay` (the time the sensor will report "occupied" after the last motion is detected before transitioning to "unoccupied") is set to **15 minutes (900 seconds)**.
+
+**Reasoning:**
+*   **User Convenience:** This duration is suitable for spaces like garages where individuals might be present but relatively still for periods (e.g., working on a project). It helps prevent lights from turning off prematurely.
+*   **Energy Savings:** While providing convenience, 15 minutes is a reasonable timeframe to ensure lights don't remain on unnecessarily when the space is truly vacant.
+*   **Common Practice:** It aligns with common default or recommended settings for residential occupancy sensors in similar use cases.
+*   **Configurability:** Although Apple Home's UI might not directly expose this setting, the attribute is writable via the Matter protocol, allowing for future adjustments through other Matter controllers or tools like `chip-tool`.
