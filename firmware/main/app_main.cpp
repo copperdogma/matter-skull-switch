@@ -28,7 +28,7 @@
 
 // drivers implemented by this example
 #include <drivers/shtc3.h>
-#include <drivers/pir.h>
+#include "drivers/include/pir_sensor.h"
 
 static const char *TAG = "app_main";
 
@@ -170,6 +170,7 @@ extern "C" void app_main()
     static pir_sensor_config_t pir_config = {
         .cb = occupancy_sensor_notification,
         .endpoint_id = endpoint::get_id(occupancy_sensor_ep),
+        .user_data = nullptr, // Explicitly initialize to suppress warning
     };
     err = pir_sensor_init(&pir_config);
     ABORT_APP_ON_FAILURE(err == ESP_OK, ESP_LOGE(TAG, "Failed to initialize occupancy sensor driver"));

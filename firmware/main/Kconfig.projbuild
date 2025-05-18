@@ -19,3 +19,13 @@ menu "Example Configuration"
             Default PIR Data Pin
 
 endmenu
+
+menu "Occupancy Sensor Configuration"
+    config PIR_SENSOR_GPIO_NUM
+        int "PIR Sensor GPIO Pin Number"
+        default 4
+        range 0 39
+        help
+            GPIO pin number where the PIR sensor output is connected.
+            Default is 4.
+endmenu

@@ -1,7 +1,7 @@
 idf_component_register(SRC_DIRS          "." "drivers"
-                       INCLUDE_DIRS      "." "drivers"
+                       INCLUDE_DIRS      "." "drivers/include"
                        PRIV_INCLUDE_DIRS "." 
-                                       "drivers" 
+                                       "drivers/include" 
                        REQUIRES espressif__esp_matter
                        )
 
