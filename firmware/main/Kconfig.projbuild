@@ -2,19 +2,24 @@ menu "Example Configuration"
 
     config SHTC3_I2C_SDA_PIN
         int "I2C SDA Pin"
-        default 4
+        default 4 if IDF_TARGET_ESP32S3
+        default 8 if IDF_TARGET_ESP32C3
         help
             GPIO number for I2C master data
+            For ESP32-C3, GPIO 8 is the default SDA pin.
 
     config SHTC3_I2C_SCL_PIN
         int "I2C SCL Pin"
-        default 5
+        default 5 if IDF_TARGET_ESP32S3
+        default 9 if IDF_TARGET_ESP32C3
         help
             GPIO number for I2C master clock
+            For ESP32-C3, GPIO 9 is the default SCL pin.
 
     config PIR_DATA_PIN
         int "PIR Data Pin"
-        default 7
+        default 7 if IDF_TARGET_ESP32S3
+        default 3 if IDF_TARGET_ESP32C3
         help
             Default PIR Data Pin
 
@@ -23,20 +28,24 @@ endmenu
 menu "Occupancy Sensor Configuration"
     config PIR_SENSOR_GPIO_NUM
         int "PIR Sensor GPIO Pin Number"
-        default 4
+        default 4 if IDF_TARGET_ESP32S3
+        default 3 if IDF_TARGET_ESP32C3
         range 0 39
         help
             GPIO pin number where the PIR sensor output is connected.
-            Default is 4.
+            Default is GPIO 4 for ESP32-S3 and GPIO 3 for ESP32-C3.
+            For ESP32-C3, avoid using strapping pins (GPIO 2, 8, 9) 
+            and JTAG pins (GPIO 4-7).
             
     config LED_INDICATOR_GPIO_NUM
         int "LED Indicator GPIO Pin Number"
-        default 6
+        default 6 if IDF_TARGET_ESP32S3
+        default 10 if IDF_TARGET_ESP32C3
         range 0 48
         help
             GPIO pin number for the LED status indicator.
             Dim when "on", bright blinking when "motion detected".
-            Default is 6 (on the same side as the PIR sensor pin).
+            Default is GPIO 6 for ESP32-S3 and GPIO 10 for ESP32-C3.
             
     config PIR_OCCUPIED_TO_UNOCCUPIED_DELAY_SECONDS
         int "PIR Occupied to Unoccupied Delay (seconds)"
