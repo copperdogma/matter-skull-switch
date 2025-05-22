@@ -67,9 +67,11 @@ static void occupancy_sensor_notification(uint16_t endpoint_id, bool occupancy, 
         
         // Update LED state based on occupancy status
         if (occupancy) {
+            ESP_LOGI(TAG, "PIR Sensor: Motion DETECTED! Triggering LED blink.");
             // Motion detected - flash 3 times then stay bright
             pir_led_indicator_set_blink();
         } else {
+            ESP_LOGI(TAG, "PIR Sensor: Motion ended or timeout. Setting LED to dim.");
             // No occupancy - dim
             pir_led_indicator_set_dim();
         }

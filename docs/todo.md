@@ -111,6 +111,46 @@
     - `E (77757) chip[SC]: The device does not support GetClock_RealTimeMS() API: 6c.`
     - Known issue in ESP-Matter (GitHub issue #1095), doesn't affect functionality
 
+## ESP32-C3 Supermini Migration 
+
+- [x] **Update ESP-IDF target:**
+    - [x] Added ESP32-C3 specific configuration to `Kconfig.projbuild`
+    - [x] Created `sdkconfig.defaults.esp32c3` file
+    - [ ] Run `idf.py set-target esp32c3` to change target from ESP32-S3 to ESP32-C3
+    - [ ] Run `idf.py reconfigure` after changing the target
+
+- [x] **Update GPIO pin configurations:**
+    - [x] Researched ESP32-C3 Supermini pinout and safe pins to use
+    - [x] Updated GPIO assignments in `Kconfig.projbuild` to match C3 Supermini pins:
+      - PIR sensor moved from GPIO 4 to GPIO 3
+      - LED indicator moved from GPIO 6 to GPIO 10
+      - I2C pins set to GPIO 8 (SDA) and GPIO 9 (SCL)
+    - [x] Avoided strapping pins (GPIO 2, 8, 9) for critical functions
+    - [x] Avoided JTAG pins (GPIO 4-7) for critical functions
+    - [ ] Test the new pin assignments on actual hardware
+
+- [x] **Memory and performance optimization:**
+    - [x] Added optimizations to `sdkconfig.defaults.esp32c3`:
+      - Reduced boot time with logging level adjustments
+      - Memory optimization for single-core operation
+      - Disabled SPIRAM to match C3 hardware capabilities
+      - Adjusted partition table for 4MB flash
+
+- [ ] **Platform-specific feature adjustments:**
+    - [x] Ensured configuration is compatible with C3's RISC-V architecture
+    - [ ] Verify PWM/LEDC implementation for LED indicator works on C3
+  
+- [ ] **Build and test changes:**
+    - [ ] Build with ESP32-C3 target
+    - [ ] Test basic functionality
+    - [ ] Verify Matter commissioning still works
+    - [ ] Verify occupancy detection and reporting
+
+- [x] **Documentation updates:**
+    - [x] Updated README.md with ESP32-C3 support information
+    - [x] Added hardware connection details for ESP32-C3 Supermini
+    - [ ] Add physical wiring diagram for ESP32-C3 setup
+
 ## Future Enhancements
 - [ ] OTA update capability
 - [ ] Enhanced status indicators

@@ -10,8 +10,8 @@ This document details the technical implementation of the ESP32 Matter Occupancy
 
 ## Architecture
 ### Hardware Components
-- ESP32-S3 WROOM module
-  - Dual-core 240 MHz processor
+- ESP32-C3 SuperMini
+  - Integrated Wi-Fi and Bluetooth LE 5.0
   - 512KB SRAM for Matter stack
   - 8MB Flash for firmware/storage
   - Dual USB-C ports
@@ -240,7 +240,7 @@ Selected Configuration:
 - Power Consumption: <65μA
 - Digital Output: 3.3V/0V logic levels
 
-### ESP32-S3 Power Specifications:
+### ESP32-C3 SuperMini Power Specifications:
 - USB-C input: 5V @ 500mA maximum (2.5W)
 - Core Components:
   - CPU at full load: ~200mA
@@ -286,7 +286,7 @@ Selected Configuration:
 - HC-SR501 Datasheet (v1.2): https://www.mpja.com/download/31227sc.pdf
   - Last accessed: 20250117
   - Key specs: Operating voltage, power consumption, output levels
-- ESP32-S3 Technical Reference Manual: https://www.espressif.com/sites/default/files/documentation/esp32-s3_technical_reference_manual_en.pdf
+- ESP32-C3 SuperMini Technical Reference Manual: https://www.espressif.com/sites/default/files/documentation/esp32-c3_technical_reference_manual_en.pdf
   - Version: 1.1
   - Last accessed: 20250117
   - Key sections: Power Management (Chapter 5)
@@ -298,6 +298,65 @@ Selected Configuration:
 ## Project Structure
 
 The project is organized into two main components, each with its own Cursor workspace but managed in a single GitHub repository:
+
+```
+esp32-matter-occupancy/              # Root directory (GitHub repository)
+├── docs/                           # Documentation workspace
+│   ├── spec.md                    # Project specifications
+│   ├── design.md                  # Technical design decisions
+│   ├── todo.md                    # Task tracking
+│   ├── CHANGELOG.md               # Project history
+│   ├── references/                # Reference materials (git-ignored)
+│   │   ├── datasheets/           # Component datasheets
+│   │   ├── specs/                # Downloaded specifications
+│   │   └── research/             # Research materials
+│   └── assets/                    # Project assets (diagrams, images)
+│
+├── firmware/                      # Firmware workspace
+│   ├── src/                      # Source code
+│   ├── include/                  # Header files
+│   ├── components/               # ESP-IDF components
+│   ├── main/                     # Main application code
+│   └── sdkconfig                 # ESP-IDF configuration
+│
+├── .gitignore                    # Git ignore rules
+└── README.md                     # Project overview
+```
+
+### Key Considerations:
+- Documentation and firmware are separate Cursor workspaces but part of the same Git repository
+- The `references/` directory is git-ignored and used for downloaded specifications, research materials, and reference implementations
+- Each workspace has its own `.cursorrules` file for specialized Cursor configuration
+- Common assets like diagrams and images are stored in `docs/assets/` and version controlled 
+
+## 1. Hardware Design
+
+### 1.1. Microcontroller: ESP32-C3 SuperMini
+
+*   **Choice:** ESP32-C3 SuperMini.
+*   **Reasoning:** The ESP32-C3 is a cost-effective System-on-Chip (SoC) with integrated Wi-Fi and Bluetooth LE 5.0. It supports ESP-IDF and has sufficient processing power and memory for a Matter application. The SuperMini form factor is compact.
+*   **Reference:** [https://github.com/sidharthmohannair/Tutorial-ESP32-C3-Super-Mini](https://github.com/sidharthmohannair/Tutorial-ESP32-C3-Super-Mini)
+
+### 1.2. Occupancy Sensor: HC-SR501 PIR Sensor
+
+*   **Choice:** HC-SR501 PIR (Passive Infrared) Sensor.
+*   **Reasoning:** Widely available, inexpensive, and simple to interface (digital output). Suitable for basic occupancy detection.
+*   **Interfacing:** The HC-SR501's `OUT` pin (digital high on detection, low otherwise) will be connected to a GPIO pin on the ESP32-C3 SuperMini. **Specifically, we will use GPIO3 on the ESP32-C3 SuperMini for the PIR sensor output.**
+    *   Power (VCC) and Ground (GND) for the HC-SR501 will also be supplied by the ESP32-C3 SuperMini board (typically 5V if available, or 3.3V if the sensor supports it and the ESP32-C3 board provides a suitable pin).
+
+### 1.3. Power
+
+*   The ESP32-C3 SuperMini board will be powered via its USB-C port.
+*   The HC-SR501 sensor will be powered from the ESP32-C3 SuperMini board's VCC/GND pins.
+
+### 1.4. LED Indicator
+
+*   A status LED will be connected to GPIO5 (default, configurable via Kconfig) for visual feedback.
+*   **Details:** See `docs/docs/led_indicator.md` for implementation and behavior.
+
+## 2. Software Design
+
+### 2.1. Firmware: ESP-IDF & ESP-Matter SDK
 
 ```
 esp32-matter-occupancy/              # Root directory (GitHub repository)
