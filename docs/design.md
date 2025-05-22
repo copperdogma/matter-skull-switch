@@ -141,10 +141,11 @@ This document details the technical implementation of the ESP32 Matter Occupancy
 
 # Design Decisions
 
-20250116: Created by Cam Marsollier and Claude Sonnet 3.5
-20250117: Updated by Cam Marsollier with Claude Sonnet 3.5 to document occupancy delay research
-20250117: Updated by Cam Marsollier with Claude Sonnet 3.5 to document power management simplification
-20250117: Updated by Cam Marsollier with Claude Sonnet 3.5 to document Matter cluster implementation
+## Enclosure
+- Old HDD case: 116mm tall x 80mm wide x 21mm thick
+- HDD connector port opening on the bottom, a bit wide for USB-C but perfectly tall enough
+- two halves: metal top + 1 side, plastic bottom + 3 sides
+- QR code printed and glued to the side for comissioning
 
 ## Matter Cluster Implementation
 

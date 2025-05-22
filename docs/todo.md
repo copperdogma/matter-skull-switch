@@ -36,7 +36,7 @@
   - [x] Power up ESP32 via USB-C
   - [x] Test 5V output capability
   - [x] Basic PIR sensor functionality check (Verified 0V/3.3V output, 2.5s block time)
-  - [ ] GPIO input test with PIR
+  - [x] GPIO input test with PIR
 
 ### Firmware Implementation
 - [x] **Implement PIR sensor driver and logic:**
@@ -62,9 +62,9 @@
   - [x] Study esp-matter occupancy sensor example
   - [x] Review Matter cluster specifications for occupancy
   - [x] Analyze ESP32 Matter commissioning flow
-- [ ] Investigate PIR sensor mounting:
-  - [ ] Test sensitivity ranges
-  - [ ] Determine optimal mounting height/angle
+- [x] Investigate PIR sensor mounting:
+  - [x] Test sensitivity ranges
+  - [x] Determine optimal mounting height/angle
 
 ## Documentation
 - [x] Create project README
@@ -77,15 +77,14 @@
     - [ ] Add small dab of non-conductive hot glue at connector bases for stability
 
 ## Testing
-- [ ] Functionality Testing:
-  - [ ] PIR sensitivity calibration
-  - [ ] Motion detection reliability
-  - [ ] Delay timing accuracy
-  - [ ] Settings persistence
-- [ ] Integration Testing:
-  - [ ] Matter commissioning
-  - [ ] HomeKit interaction
-  - [ ] Power cycle recovery
+- [x] Functionality Testing:
+  - [x] PIR sensitivity calibration
+  - [x] Motion detection reliability
+  - [x] Delay timing accuracy
+- [x] Integration Testing:
+  - [x] Matter commissioning
+  - [x] HomeKit interaction
+  - [x] Power cycle recovery
   - [ ] Network reconnection
 
 ## Deferred / Lower Priority Items
@@ -116,8 +115,8 @@
 - [x] **Update ESP-IDF target:**
     - [x] Added ESP32-C3 specific configuration to `Kconfig.projbuild`
     - [x] Created `sdkconfig.defaults.esp32c3` file
-    - [ ] Run `idf.py set-target esp32c3` to change target from ESP32-S3 to ESP32-C3
-    - [ ] Run `idf.py reconfigure` after changing the target
+    - [x] Run `idf.py set-target esp32c3` to change target from ESP32-S3 to ESP32-C3
+    - [x] Run `idf.py reconfigure` after changing the target
 
 - [x] **Update GPIO pin configurations:**
     - [x] Researched ESP32-C3 Supermini pinout and safe pins to use
@@ -127,7 +126,7 @@
       - I2C pins set to GPIO 8 (SDA) and GPIO 9 (SCL)
     - [x] Avoided strapping pins (GPIO 2, 8, 9) for critical functions
     - [x] Avoided JTAG pins (GPIO 4-7) for critical functions
-    - [ ] Test the new pin assignments on actual hardware
+    - [x] Test the new pin assignments on actual hardware
 
 - [x] **Memory and performance optimization:**
     - [x] Added optimizations to `sdkconfig.defaults.esp32c3`:
@@ -136,15 +135,15 @@
       - Disabled SPIRAM to match C3 hardware capabilities
       - Adjusted partition table for 4MB flash
 
-- [ ] **Platform-specific feature adjustments:**
+- [x] **Platform-specific feature adjustments:**
     - [x] Ensured configuration is compatible with C3's RISC-V architecture
-    - [ ] Verify PWM/LEDC implementation for LED indicator works on C3
+    - [x] Verify PWM/LEDC implementation for LED indicator works on C3
   
-- [ ] **Build and test changes:**
-    - [ ] Build with ESP32-C3 target
-    - [ ] Test basic functionality
-    - [ ] Verify Matter commissioning still works
-    - [ ] Verify occupancy detection and reporting
+- [x] **Build and test changes:**
+    - [x] Build with ESP32-C3 target
+    - [x] Test basic functionality
+    - [x] Verify Matter commissioning still works
+    - [x] Verify occupancy detection and reporting
 
 - [x] **Documentation updates:**
     - [x] Updated README.md with ESP32-C3 support information
@@ -157,3 +156,10 @@
 - [ ] Advanced automation features
 - [ ] Matter security hardening
 - [ ] Proper enclosure with temperature rating (-20°C to +70°C)
+
+## Suggested Final Tasks
+- [ ] Final Reliability Testing:
+    - [ ] Power cycle test (confirm functionality and settings persistence).
+    - [ ] Network reconnection test (confirm recovery after Wi-Fi disruption).
+- [ ] Finalize `sdkconfig.defaults.esp32c3`:
+    - [ ] Copy current working `firmware/sdkconfig` to `sdkconfig.defaults.esp32c3` after all settings are finalized.

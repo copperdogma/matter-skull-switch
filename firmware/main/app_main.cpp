@@ -233,27 +233,37 @@ extern "C" void app_main()
         cluster_t *occupancy_cluster = cluster::get(occupancy_sensor_ep, OccupancySensing::Id);
         if (occupancy_cluster) {
             uint32_t delay_attr_id = OccupancySensing::Attributes::PIROccupiedToUnoccupiedDelay::Id;
-            esp_matter_attr_val_t default_val = esp_matter_uint16(DEFAULT_PIR_OCCUPIED_TO_UNOCCUPIED_DELAY_SECONDS); // Use default value
-            attribute_t *delay_attribute = attribute::get(occupancy_cluster, delay_attr_id);
+            esp_matter_attr_val_t default_val = esp_matter_uint16(DEFAULT_PIR_OCCUPIED_TO_UNOCCUPIED_DELAY_SECONDS);
 
+            attribute_t *delay_attribute = attribute::get(occupancy_cluster, delay_attr_id);
             if (!delay_attribute) {
-                ESP_LOGI(TAG, "Creating PIROccupiedToUnoccupiedDelay attribute with default %d s", default_val.val.u16);
-                attribute::create(occupancy_cluster, delay_attr_id,
-                                  ATTRIBUTE_FLAG_WRITABLE | ATTRIBUTE_FLAG_NONVOLATILE,
-                                  default_val);
+                ESP_LOGI(TAG, "PIROccupiedToUnoccupiedDelay attribute metadata not found in RAM. Attempting to create/link it.");
+                ESP_LOGI(TAG, "(This will use NVS if an entry exists, or initialize NVS with Kconfig default %d s if new for this attribute).", default_val.val.u16);
+                delay_attribute = attribute::create(occupancy_cluster, delay_attr_id,
+                                                  ATTRIBUTE_FLAG_WRITABLE | ATTRIBUTE_FLAG_NONVOLATILE,
+                                                  default_val); 
+                if (delay_attribute == nullptr) {
+                    ESP_LOGE(TAG, "Failed to create/link PIROccupiedToUnoccupiedDelay attribute.");
+                } else {
+                    ESP_LOGI(TAG, "PIROccupiedToUnoccupiedDelay attribute created/linked successfully.");
+                    // Log the value it ended up with (either from NVS or the default_val used for initialization)
+                    esp_matter_attr_val_t val_after_create;
+                    if (attribute::get_val(delay_attribute, &val_after_create) == ESP_OK) {
+                        ESP_LOGI(TAG, "Value of PIROccupiedToUnoccupiedDelay after create/link: %d s.", val_after_create.val.u16);
+                    } else {
+                        ESP_LOGW(TAG, "Could not read value after creating/linking PIROccupiedToUnoccupiedDelay.");
+                    }
+                }
             } else {
-                ESP_LOGI(TAG, "PIROccupiedToUnoccupiedDelay attribute exists. Setting to our configured value.");
+                // Attribute was found in RAM (presumably loaded from NVS or set by controller)
                 esp_matter_attr_val_t current_val;
                 if (attribute::get_val(delay_attribute, &current_val) == ESP_OK) {
-                    // Always set to our Kconfig-defined default value on startup
-                    ESP_LOGI(TAG, "Setting PIROccupiedToUnoccupiedDelay from %d s to default %d s", 
-                            current_val.val.u16, default_val.val.u16);
-                    attribute::update(endpoint::get_id(occupancy_sensor_ep), OccupancySensing::Id, delay_attr_id, &default_val);
+                    ESP_LOGI(TAG, "PIROccupiedToUnoccupiedDelay attribute exists. Current value: %d s. (Kconfig default: %d s). Retaining current value.",
+                             current_val.val.u16, default_val.val.u16);
+                } else {
+                    ESP_LOGW(TAG, "PIROccupiedToUnoccupiedDelay attribute exists, but failed to read its current value. Kconfig default: %d s.", default_val.val.u16);
                 }
-                // Ensuring flags are set (Note: esp-matter might not support changing flags post-creation easily.
-                // If flags are incorrect, attribute might need to be re-created or SDK modified.
-                // For now, we assume flags set at initial creation (if SDK does so) or by our creation are sufficient.)
-                 ESP_LOGI(TAG, "Assuming PIROccupiedToUnoccupiedDelay flags are correctly set (Writable, Non-Volatile).");
+                // No attribute::update() call here, respecting the existing (NVS/controller) value.
             }
         } else {
             ESP_LOGE(TAG, "Failed to get OccupancySensing cluster from occupancy_sensor_ep for delay attribute setup");
