@@ -233,20 +233,22 @@ extern "C" void app_main()
         cluster_t *occupancy_cluster = cluster::get(occupancy_sensor_ep, OccupancySensing::Id);
         if (occupancy_cluster) {
             uint32_t delay_attr_id = OccupancySensing::Attributes::PIROccupiedToUnoccupiedDelay::Id;
-            esp_matter_attr_val_t default_val = esp_matter_uint16(DEFAULT_PIR_OCCUPIED_TO_UNOCCUPIED_DELAY_SECONDS);
+            esp_matter_attr_val_t kconfig_default_val = esp_matter_uint16(DEFAULT_PIR_OCCUPIED_TO_UNOCCUPIED_DELAY_SECONDS);
 
             attribute_t *delay_attribute = attribute::get(occupancy_cluster, delay_attr_id);
+            
             if (!delay_attribute) {
                 ESP_LOGI(TAG, "PIROccupiedToUnoccupiedDelay attribute metadata not found in RAM. Attempting to create/link it.");
-                ESP_LOGI(TAG, "(This will use NVS if an entry exists, or initialize NVS with Kconfig default %d s if new for this attribute).", default_val.val.u16);
+                ESP_LOGI(TAG, "(This will use NVS if an entry exists, or initialize NVS with Kconfig default %d s if new for this attribute).", kconfig_default_val.val.u16);
+                
                 delay_attribute = attribute::create(occupancy_cluster, delay_attr_id,
                                                   ATTRIBUTE_FLAG_WRITABLE | ATTRIBUTE_FLAG_NONVOLATILE,
-                                                  default_val); 
+                                                  kconfig_default_val); 
+                
                 if (delay_attribute == nullptr) {
                     ESP_LOGE(TAG, "Failed to create/link PIROccupiedToUnoccupiedDelay attribute.");
                 } else {
                     ESP_LOGI(TAG, "PIROccupiedToUnoccupiedDelay attribute created/linked successfully.");
-                    // Log the value it ended up with (either from NVS or the default_val used for initialization)
                     esp_matter_attr_val_t val_after_create;
                     if (attribute::get_val(delay_attribute, &val_after_create) == ESP_OK) {
                         ESP_LOGI(TAG, "Value of PIROccupiedToUnoccupiedDelay after create/link: %d s.", val_after_create.val.u16);
@@ -255,15 +257,13 @@ extern "C" void app_main()
                     }
                 }
             } else {
-                // Attribute was found in RAM (presumably loaded from NVS or set by controller)
                 esp_matter_attr_val_t current_val;
                 if (attribute::get_val(delay_attribute, &current_val) == ESP_OK) {
                     ESP_LOGI(TAG, "PIROccupiedToUnoccupiedDelay attribute exists. Current value: %d s. (Kconfig default: %d s). Retaining current value.",
-                             current_val.val.u16, default_val.val.u16);
+                             current_val.val.u16, kconfig_default_val.val.u16);
                 } else {
-                    ESP_LOGW(TAG, "PIROccupiedToUnoccupiedDelay attribute exists, but failed to read its current value. Kconfig default: %d s.", default_val.val.u16);
+                    ESP_LOGW(TAG, "PIROccupiedToUnoccupiedDelay attribute exists, but failed to read its current value. Kconfig default: %d s.", kconfig_default_val.val.u16);
                 }
-                // No attribute::update() call here, respecting the existing (NVS/controller) value.
             }
         } else {
             ESP_LOGE(TAG, "Failed to get OccupancySensing cluster from occupancy_sensor_ep for delay attribute setup");
@@ -314,6 +314,6 @@ extern "C" uint16_t get_pir_unoccupied_delay_seconds(uint16_t endpoint_id)
             }
         }
     }
-    ESP_LOGW(TAG, "Failed to get PIROccupiedToUnoccupiedDelay for ep %d, returning default %ds", endpoint_id, DEFAULT_PIR_OCCUPIED_TO_UNOCCUPIED_DELAY_SECONDS);
+    ESP_LOGW(TAG, "Failed to get PIROccupiedToUnoccupiedDelay for ep %d, returning default %ds from Kconfig", endpoint_id, DEFAULT_PIR_OCCUPIED_TO_UNOCCUPIED_DELAY_SECONDS);
     return DEFAULT_PIR_OCCUPIED_TO_UNOCCUPIED_DELAY_SECONDS; // Default to configured value if attribute not found or value is 0
 }
