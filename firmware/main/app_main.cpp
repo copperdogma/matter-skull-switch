@@ -162,6 +162,15 @@ static esp_err_t app_identification_cb(identification::callback_type_t type, uin
 static esp_err_t app_attribute_update_cb(attribute::callback_type_t type, uint16_t endpoint_id, uint32_t cluster_id,
                                          uint32_t attribute_id, esp_matter_attr_val_t *val, void *priv_data)
 {
+    if (type == PRE_UPDATE) { // Or POST_UPDATE, depending on when you want to see the value
+        if (cluster_id == OccupancySensing::Id && attribute_id == OccupancySensing::Attributes::PIROccupiedToUnoccupiedDelay::Id) {
+            ESP_LOGW(TAG, "app_attribute_update_cb: PIROccupiedToUnoccupiedDelay update received for ep %u. New value: %u (type: %d)", 
+                     endpoint_id, val->val.u16, val->type);
+        } else if (cluster_id == OccupancySensing::Id) {
+             ESP_LOGI(TAG, "app_attribute_update_cb: OccupancySensing cluster (ID: %lu) attribute (ID: %lu) update for ep %u. Value type: %d", 
+                     cluster_id, attribute_id, endpoint_id, val->type);
+        }
+    }
     // Since this is just a sensor and we don't expect any writes on our temperature sensor,
     // so, return success.
     return ESP_OK;
@@ -309,11 +318,20 @@ extern "C" uint16_t get_pir_unoccupied_delay_seconds(uint16_t endpoint_id)
             esp_matter_attr_val_t current_val;
             if (attribute::get_val(delay_attribute, &current_val) == ESP_OK) {
                 if (current_val.val.u16 > 0) { // Ensure a valid delay is returned
+                    ESP_LOGI(TAG, "get_pir_unoccupied_delay_seconds: Returning %d from NVS/attribute for ep %d", current_val.val.u16, endpoint_id);
                     return current_val.val.u16;
+                } else {
+                    ESP_LOGW(TAG, "get_pir_unoccupied_delay_seconds: NVS/attribute value for ep %d is %d (<=0), falling back to Kconfig.", endpoint_id, current_val.val.u16);
                 }
+            } else {
+                 ESP_LOGW(TAG, "get_pir_unoccupied_delay_seconds: Failed to get_val for PIROccupiedToUnoccupiedDelay for ep %d. Falling back to Kconfig.", endpoint_id);
             }
+        } else {
+            ESP_LOGW(TAG, "get_pir_unoccupied_delay_seconds: delay_attribute is NULL for PIROccupiedToUnoccupiedDelay for ep %d. Falling back to Kconfig.", endpoint_id);
         }
+    } else {
+         ESP_LOGW(TAG, "get_pir_unoccupied_delay_seconds: occupancy_cluster is NULL for ep %d. Falling back to Kconfig.", endpoint_id);
     }
-    ESP_LOGW(TAG, "Failed to get PIROccupiedToUnoccupiedDelay for ep %d, returning default %ds from Kconfig", endpoint_id, DEFAULT_PIR_OCCUPIED_TO_UNOCCUPIED_DELAY_SECONDS);
+    ESP_LOGW(TAG, "get_pir_unoccupied_delay_seconds: Returning default %ds from Kconfig for ep %d", DEFAULT_PIR_OCCUPIED_TO_UNOCCUPIED_DELAY_SECONDS, endpoint_id); // Corrected log to show endpoint_id then value
     return DEFAULT_PIR_OCCUPIED_TO_UNOCCUPIED_DELAY_SECONDS; // Default to configured value if attribute not found or value is 0
 }

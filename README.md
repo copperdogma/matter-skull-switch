@@ -49,11 +49,11 @@ Manual Code: 34970112332
 |--------------|---------------|-------------------------|
 | GND          | PIR GND       |                         |
 | 5V/3.3V      | PIR VCC       |                         |
-| GPIO 4       | PIR Output    | Default, configurable   |
-| GPIO 5       | LED Anode (+) | Default, configurable   |
+| GPIO 3       | PIR Output    | Final configuration     |
+| GPIO 5       | LED Anode (+) | Through 220Ω resistor   |
 | GND          | LED Cathode (-)|                         |
 
-*GPIO pins can be configured in menuconfig
+*For a detailed wiring diagram, see [docs/circuit_diagram.md](docs/circuit_diagram.md)*
 
 ## Setup & Development
 
@@ -117,6 +117,22 @@ matter-occupancy-sensor/
 - [Requirements](docs/requirements.md) - Detailed project requirements
 - [Design](docs/design.md) - Technical implementation details
 - [Setup Guide](SETUP.md) - Environment and hardware setup
+- [Circuit Diagram](docs/circuit_diagram.md) - Detailed wiring diagram and assembly notes
+
+## Project Status
+
+The project is complete and fully functional. The occupancy sensor has been successfully integrated with Apple Home via Matter protocol and is reliable in detecting and reporting motion events. The device is housed in a repurposed HDD enclosure with the following features:
+
+- **Hardware:** ESP32-C3 SuperMini with HC-SR501 PIR sensor and status LED
+- **Connection Method:** Dupont connectors with hot glue reinforcement
+- **Configuration:** 15-minute default occupancy timeout (configurable via Matter attributes)
+- **Status Indication:** LED dims when no motion detected, blinks/brightens with motion
+
+### Known Limitations
+
+1. While the occupancy timeout is configurable via Matter attributes, the Apple Home app doesn't provide a direct UI for changing this setting
+2. Some non-critical console warnings appear during operation but don't affect functionality
+3. The device has been primarily tested with Apple Home; integration with other Matter controllers may require additional validation
 
 ## Author
 

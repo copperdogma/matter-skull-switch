@@ -69,12 +69,12 @@
 ## Documentation
 - [x] Create project README
 - [x] Document development setup process
-- [ ] Create hardware assembly guide:
-  - [ ] Wiring diagram
-  - [ ] Final Wiring Plan:
-    - [ ] Use Dupont connectors directly to ESP32 pins for PIR sensor and LED
-    - [ ] Make GND pigtail to ESP32 GND because we need two ground connections (PIR sensor and LED)
-    - [ ] Add small dab of non-conductive hot glue at connector bases for stability
+- [x] Create hardware assembly guide:
+  - [x] Wiring diagram (See [docs/circuit_diagram.md](../circuit_diagram.md))
+  - [x] Final Wiring Plan:
+    - [x] Use Dupont connectors directly to ESP32 pins for PIR sensor and LED
+    - [x] Make GND pigtail to ESP32 GND because we need two ground connections (PIR sensor and LED)
+    - [x] Add small dab of non-conductive hot glue at connector bases for stability
 
 ## Testing
 - [x] Functionality Testing:
@@ -85,7 +85,7 @@
   - [x] Matter commissioning
   - [x] HomeKit interaction
   - [x] Power cycle recovery
-  - [ ] Network reconnection
+  - [x] Network reconnection
 
 ## Deferred / Lower Priority Items
 
@@ -148,7 +148,7 @@
 - [x] **Documentation updates:**
     - [x] Updated README.md with ESP32-C3 support information
     - [x] Added hardware connection details for ESP32-C3 Supermini
-    - [ ] Add physical wiring diagram for ESP32-C3 setup
+    - [x] Add physical wiring diagram for ESP32-C3 setup (See [docs/circuit_diagram.md](../circuit_diagram.md))
 
 ## Future Enhancements
 - [ ] OTA update capability
@@ -158,8 +158,8 @@
 - [ ] Proper enclosure with temperature rating (-20°C to +70°C)
 
 ## Suggested Final Tasks
-- [ ] Final Reliability Testing:
-    - [ ] Power cycle test (confirm functionality and settings persistence).
-    - [ ] Network reconnection test (confirm recovery after Wi-Fi disruption).
-- [ ] Finalize `sdkconfig.defaults.esp32c3`:
-    - [ ] Copy current working `firmware/sdkconfig` to `sdkconfig.defaults.esp32c3` after all settings are finalized.
+- [x] Final Reliability Testing:
+    - [x] Power cycle test (confirm functionality and settings persistence).
+    - [x] Network reconnection test (confirm recovery after Wi-Fi disruption).
+- [x] Finalize `sdkconfig.defaults.esp32c3`:
+    - [x] Copy current working `firmware/sdkconfig` to `sdkconfig.defaults.esp32c3` after all settings are finalized.
