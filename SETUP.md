@@ -27,6 +27,87 @@ idf.py -p PORT monitor     # Monitor serial output
 - [ESP-Matter Programming Guide](https://docs.espressif.com/projects/esp-matter/en/latest/esp32/developing.html)
 - [ESP-IDF Get Started](https://docs.espressif.com/projects/esp-idf/en/v5.4.1/esp32s3/get-started/index.html)
 
+## Development Environment Setup: ESP32-C3 SuperMini & ESP-IDF with Matter
+
+This document outlines the steps to set up the development environment for the Matter Occupancy Sensor project, which uses an ESP32-C3 SuperMini microcontroller.
+
+**Reference for ESP32-C3 SuperMini:** [https://github.com/sidharthmohannair/Tutorial-ESP32-C3-Super-Mini](https://github.com/sidharthmohannair/Tutorial-ESP32-C3-Super-Mini)
+
+### 1. Docker Setup (Recommended)
+
+We will use the official Espressif Docker image for ESP-IDF and Matter, which simplifies dependency management.
+
+**1.1. Pull the Docker Image:**
+   ```bash
+   docker pull espressif/esp-matter
+   ```
+
+**1.2. Run the Docker Container:**
+   Replace `/path/to/your/matter-occupancy-sensor` with the actual absolute path to your project directory on your host machine.
+   ```bash
+   docker run -it --rm \
+       --device=/dev/tty.usbmodemXXXX:/dev/ttyUSB0 \
+       -v /path/to/your/matter-occupancy-sensor:/project \
+       espressif/esp-matter
+   ```
+   *   `--device`: This maps your ESP32-C3 SuperMini's serial port (e.g., `/dev/tty.usbmodemXXXX` on macOS, `/dev/ttyUSB0` on Linux) into the container. You **must** identify the correct serial port for your device on your host system and replace `XXXX` or `USB0` accordingly.
+   *   `-v`: This mounts your project directory into the `/project` directory inside the container.
+   *   You are now inside the Docker container's shell.
+
+### 2. ESP-IDF & Matter Configuration (Inside Docker Container)
+
+**2.1. Navigate to Project Firmware Directory:**
+   ```bash
+   cd /project/firmware
+   ```
+
+**2.2. Set ESP-IDF Target:**
+   It's crucial to set the target for the ESP32-C3 chip:
+   ```bash
+   idf.py set-target esp32c3
+   ```
+
+**2.3. Configure the Project (Menuconfig - User Task):
+   ```bash
+   idf.py menuconfig
+   ```
+   *   **You (the user) will need to perform this step.** The AI cannot run interactive tools.
+   *   Navigate to Component config --->
+       ESP Matter --->
+           Device Types --->
+               [*] Occupancy Sensor
+   ```
+   *   Navigate and make other necessary configurations as per the project requirements (e.g., Wi-Fi credentials if not using another method).
+   *   Save and exit `menuconfig`.
+
+**2.4. Build the Firmware:**
+   ```bash
+   idf.py build
+   ```
+
+### 3. Flashing the Firmware (User Task - Outside Docker, or Inside with Port Mapping)
+
+*   **You (the user) will need to perform this step.** The AI cannot flash the device.
+*   Ensure your ESP32-C3 SuperMini is connected to your computer via USB.
+*   If flashing from *inside* the Docker container (and you've mapped the serial port correctly as in step 1.2), use:
+    ```bash
+    idf.py -p /dev/ttyUSB0 flash monitor
+    ```
+    (Assuming `/dev/ttyUSB0` is how it appears *inside* the container, corresponding to your host's `/dev/tty.usbmodemXXXX` or similar).
+*   If flashing from *outside* the Docker container (e.g., if you have ESP-IDF installed natively), ensure you are in the `firmware` directory and have set the target correctly. The command would be similar, using your host's serial port name:
+    ```bash
+    idf.py -p /dev/tty.usbmodemXXXX flash monitor
+    ```
+*   **Bootloader Mode:** The ESP32-C3 SuperMini might require being put into bootloader mode. Typically, this involves holding down the `BOOT` button (often GPIO9), pressing and releasing the `RESET` (or `EN`) button, and then releasing the `BOOT` button.
+
+### 4. Common Issues & Troubleshooting
+
+*   **Serial Port Not Found:** Double-check the serial port name on your host and the `--device` mapping in the `docker run` command. Ensure you have the necessary USB drivers (e.g., CH340/CH341 or CP210x, though ESP32-C3 has native USB, some boards might use an external converter).
+*   **Build Errors:** Carefully read the error messages. They often point to configuration issues in `sdkconfig` or problems in the code.
+*   **Flashing Fails:** Ensure the board is in bootloader mode. Check the USB cable and connection. Try a different USB port.
+
+This setup should provide a robust environment for developing the Matter Occupancy Sensor firmware on the ESP32-C3 SuperMini.
+
 ## 1. Prerequisites
 
 Before you begin, ensure your development host (Linux, macOS, or Windows with WSL) meets the prerequisites for ESP-IDF:
