@@ -4,7 +4,7 @@ The Matter Occupancy Sensor project includes an LED status indicator that provid
 
 ## Overview
 
-The LED indicator uses PWM (Pulse Width Modulation) via the ESP32-S3's LEDC peripheral to control LED brightness and blinking patterns. The LED provides three primary states:
+The LED indicator uses PWM (Pulse Width Modulation) via the ESP32-C3's LEDC peripheral to control LED brightness and blinking patterns. The LED provides three primary states:
 
 1. **Dim Static Light** - Indicates the device is powered on and operating normally, but no motion is detected (unoccupied state).
 2. **Quick Flash (3x)** - Indicates motion has just been detected. The LED flashes brightly 3 times in rapid succession.

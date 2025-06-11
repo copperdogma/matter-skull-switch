@@ -1,35 +1,5 @@
 # Wiring Guide for Matter Occupancy Sensor
 
-## ESP32-S3 WROOM Wiring
-
-### PIR Sensor Connections
-
-```
-ESP32-S3 WROOM              HC-SR501 PIR
-+------------+              +----------+
-|            |              |          |
-| GND -------+--------------+ GND      |
-|            |              |          |
-| 5V  -------+--------------+ VCC      |
-|            |              |          |
-| GPIO4 ------+--------------+ OUT      |
-|            |              |          |
-+------------+              +----------+
-```
-
-### LED Indicator
-
-```
-ESP32-S3 WROOM              LED (with 220Ω resistor)
-+------------+              +----------+
-|            |              |          |
-| GND -------+--------------+ Cathode(-)|
-|            |              |          |
-| GPIO6 ------+----[220Ω]----+ Anode(+) |
-|            |              |          |
-+------------+              +----------+
-```
-
 ## ESP32-C3 SuperMini Wiring
 
 ### PIR Sensor Connections
@@ -57,7 +27,7 @@ ESP32-C3 SuperMini          LED (with 220Ω resistor)
 |            |              |          |
 | GND -------+--------------+ Cathode(-)|
 |            |              |          |
-| GPIO10 -----+----[220Ω]----+ Anode(+) |
+| GPIO5 ------+----[220Ω]----+ Anode(+) |
 |            |              |          |
 +------------+              +----------+
 ```

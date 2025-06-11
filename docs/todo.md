@@ -27,8 +27,8 @@
   - [x] Locate official manufacturer datasheet
   - [x] Verify operating parameters and limits
   - [x] Update design documentation with verified specs
-- [ ] Complete ESP32-S3 WROOM documentation:
-  - [x] Locate official pinout diagram (GitHub: Freenove/Freenove_ESP32_S3_WROOM_Board)
+- [x] Complete ESP32-C3 SuperMini documentation:
+- [x] Locate official pinout diagram and references
   - [x] Download technical documentation
   - [x] Verify GPIO capabilities and pin functions
   - [x] Document power pin locations
@@ -45,7 +45,7 @@
   - [x] Update OccupancySensing cluster on Endpoint 1 based on PIR state
   - [x] Test PIR detection and Matter attribute updates
 - [x] Basic Firmware Implementation:
-  - [x] Upload basic firmware to ESP32-S3
+  - [x] Upload basic firmware to ESP32-C3
   - [x] LED status indicators. Pick a GPIO pin, use PWM: dim for "on", bright blinking for "motion detected". using 220Ω resistor.
   - [ ] SKIPPING THIS: [Apple Home doesn't suport it in the UI] Basic state management
 
@@ -58,7 +58,7 @@
   - [ ] SKIPPING THIS: [Apple Home doesn't suport it in the UI] Settings persistence
 
 ## Research Tasks
-- [x] Research ESP32-S3 Matter examples/implementations:
+- [x] Research ESP32-C3 Matter examples/implementations:
   - [x] Study esp-matter occupancy sensor example
   - [x] Review Matter cluster specifications for occupancy
   - [x] Analyze ESP32 Matter commissioning flow

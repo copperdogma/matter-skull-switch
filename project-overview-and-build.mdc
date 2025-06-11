@@ -5,10 +5,10 @@ alwaysApply: false
 ---
 ## Matter Occupancy Sensor Project Overview
 
-**Purpose:** This project aims to develop a Matter-enabled occupancy sensor using an ESP32-S3 microcontroller and an HC-SR501 PIR sensor. The goal is to create a device that can be seamlessly integrated into smart home ecosystems like Apple HomeKit, Google Home, and Amazon Alexa via the Matter protocol.
+**Purpose:** This project aims to develop a Matter-enabled occupancy sensor using an ESP32-C3 microcontroller and an HC-SR501 PIR sensor. The goal is to create a device that can be seamlessly integrated into smart home ecosystems like Apple HomeKit, Google Home, and Amazon Alexa via the Matter protocol.
 
 **Key Technologies:**
-*   **Hardware:** Freenove ESP32-S3 WROOM, HC-SR501 PIR sensor.
+*   **Hardware:** Freenove ESP32-C3 WROOM (or SuperMini, assuming WROOM module is on the SuperMini board), HC-SR501 PIR sensor.
 *   **Firmware:** ESP-IDF (Espressif IoT Development Framework).
 *   **Connectivity:** Wi-Fi.
 *   **Smart Home Protocol:** Matter.
@@ -26,7 +26,7 @@ matter-occupancy-sensor/
 │   └── todo.md
 │   └── design.md
 │   └── requirements.md
-├── firmware/           # Main location for ESP32-S3 firmware
+├── firmware/           # Main location for ESP32-C3 firmware
 │   ├── main/           # Primary application code (e.g., app_main.cpp)
 │   │   └── drivers/    # Custom drivers, if any
 │   └── managed_components/ # ESP-IDF managed components (dependencies)
@@ -75,14 +75,14 @@ Before any `idf.py` commands will work in a new terminal session, you **MUST** a
 **General Build Process (Local Environment - after activating environment):**
 1.  Navigate to the firmware directory (e.g., `cd firmware` from the project root).
 2.  **Configuration (User Task):** If `sdkconfig` needs changes, instruct the user to run `idf.py menuconfig` and specify the exact changes to be made. **You cannot run `idf.py menuconfig` yourself.**
-3.  Ensure the correct ESP-IDF target is set (e.g., `esp32s3`). If not, instruct the user: `idf.py set-target esp32s3`.
+3.  Ensure the correct ESP-IDF target is set (e.g., `esp32c3`). If not, instruct the user: `idf.py set-target esp32c3`.
 4.  Reconfigure if necessary (after target change or major `sdkconfig` changes): `idf.py reconfigure`.
 5.  Build the project: `idf.py build`.
 
 **Flashing the ESP32 (User Task):**
 *   **You cannot flash the device directly.**
 *   Provide the user with the command to flash the device, typically: `idf.py -p /dev/tty.usbmodemXXXX flash monitor` (the serial port `/dev/tty.usbmodemXXXX` will vary). The user must identify the correct port on their system.
-*   Remind the user to put the ESP32-S3 into bootloader mode if necessary (usually by holding the BOOT button, pressing RESET, then releasing BOOT).
+*   Remind the user to put the ESP32-C3 into bootloader mode if necessary (usually by holding the BOOT button (often GPIO9), pressing RESET, then releasing BOOT).
 
 **Important Reminders for AI:**
 *   **Research First:** Do not guess. Search the web and use the mcp deepwiki tool to fetch up-to-date documentation based on our hardware and installed libraries/SDKs.

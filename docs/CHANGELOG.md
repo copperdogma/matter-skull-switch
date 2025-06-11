@@ -22,7 +22,7 @@
   - Verified 5V output capability
   - Documented power budget analysis
 - Documentation updates:
-  - Located and archived ESP32-S3 documentation
+  - Located and archived ESP32-S3 documentation (migrated to ESP32-C3)
   - Added detailed PIR test results
   - Consolidated power management documentation
   - Organized reference materials
@@ -36,7 +36,7 @@
 - Defined core requirements and specifications
 - Established technical design approach
 - Selected key components:
-  * ESP32-S3 WROOM as main controller
+  * ESP32-C3 SuperMini as main controller
   * HC-SR501 PIR sensor for motion detection
   * Matter protocol for HomeKit integration
   * USB-C power delivery

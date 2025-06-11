@@ -101,7 +101,7 @@ This document details the technical implementation of the ESP32 Matter Occupancy
 
 ## Technical References
 ### ESP32 Development
-- [Freenove ESP32-S3 WROOM Board Documentation](https://github.com/Freenove/Freenove_ESP32_S3_WROOM_Board/tree/main/Datasheet)
+- [ESP32-C3 SuperMini Documentation](https://github.com/sidharthmohannair/Tutorial-ESP32-C3-Super-Mini)
   - Official manufacturer repository
   - Contains pinout diagrams
   - Technical specifications
@@ -123,7 +123,7 @@ This document details the technical implementation of the ESP32 Matter Occupancy
   - QR code implementation
 
 ### Additional Documentation
-- [ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/index.html)
+- [ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/index.html)
 - [Matter Specification](https://csa-iot.org/developer-resource/specifications-download-request/) 
 
 ### HC-SR501 PIR Sensor Specifications

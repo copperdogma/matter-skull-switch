@@ -24,13 +24,12 @@ Create a reliable, Matter-compatible occupancy sensor for garage monitoring that
 ## Core Requirements
 
 ### 1. Hardware Integration
-- ESP32-S3 WROOM as main controller:
-  - Dual-core 240 MHz processor
-  - 512KB SRAM for Matter stack
-  - 8MB Flash for firmware and storage
-  - Dual USB-C ports:
-    - Port 1: Programming/debugging (UART)
-    - Port 2: Power input
+- ESP32-C3 SuperMini as main controller:
+  - Single-core RISC-V 160 MHz processor
+  - 400KB SRAM for Matter stack
+  - 4MB Flash for firmware and storage
+  - Native USB support for programming and debugging
+  - USB-C power input
   - Built-in Wi-Fi for Matter connectivity
   - 5V power output for PIR sensor
 - HC-SR501 PIR sensor for motion detection:
@@ -50,14 +49,13 @@ Create a reliable, Matter-compatible occupancy sensor for garage monitoring that
 ### 2. Power Management
 - USB-C power input:
   - 5V operation
-  - Connected to dedicated power USB-C port
   - Powers both ESP32 and PIR sensor
 - Clean power distribution:
   - 5V direct to PIR sensor
   - 3.3V regulated for ESP32 core
   - LED power management
-- Programming port remains accessible:
-  - Separate USB-C port for updates
+- Programming capability:
+  - Native USB for updates and debugging
   - No interference with power delivery
   - Allows live debugging
 
