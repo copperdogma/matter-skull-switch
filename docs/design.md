@@ -1,4 +1,6 @@
-# ESP32 Matter Occupancy Sensor Design
+# ESP32 Matter Generic Switch Design
+
+> **Migration Notice (2025-06-21):** This document is being transitioned from an occupancy-sensor design to a **Generic Switch** design.  Many sections below still reference the PIR sensor implementation and will be rewritten in a subsequent editing pass.  For the most up-to-date overview, refer to the README.  
 
 20250116: Created by Cam Marsollier with Claude Sonnet 3.5
 20250117: Updated by Cam Marsollier with Claude Sonnet 3.5 to document verified PIR sensor capabilities

@@ -1,23 +1,23 @@
 # LED Status Indicator
 
-The Matter Occupancy Sensor project includes an LED status indicator that provides visual feedback about the device's operational status.
+The Matter Generic Switch project includes an LED status indicator that provides visual feedback about the device's operational status.
 
 ## Overview
 
 The LED indicator uses PWM (Pulse Width Modulation) via the ESP32-C3's LEDC peripheral to control LED brightness and blinking patterns. The LED provides three primary states:
 
-1. **Dim Static Light** - Indicates the device is powered on and operating normally, but no motion is detected (unoccupied state).
-2. **Quick Flash (3x)** - Indicates motion has just been detected. The LED flashes brightly 3 times in rapid succession.
-3. **Bright Static Light** - Indicates the occupied state is active. The LED stays at full brightness during the entire occupancy period.
+1. **Dim Static Light** – Device powered on, no recent switch activity.
+2. **Quick Flash (3×)** – Button was just pressed. The LED flashes brightly three times.
+3. **Bright Static Light** – Button is being held down (optional) or within the debounce window.
 
 ## Behavior Sequence
 
 The LED indicator follows this behavior pattern:
 
 1. **Start/Idle State**: LED is dim (~10% brightness)
-2. **Motion Detected**: LED flashes brightly 3 times in quick succession (150ms intervals)
-3. **Occupied State**: After flashing, LED stays bright (100% brightness) for the entire occupancy period
-4. **Return to Idle**: When occupancy times out (after 10 seconds of no motion in testing, configurable), LED returns to dim
+2. **Button Pressed**: LED flashes brightly three times (150 ms intervals)
+3. **Active State**: Optionally, LED stays bright (100 % brightness) while the button is held.
+4. **Return to Idle**: After the button is released (or after a configurable timeout), LED returns to dim.
 
 ## Hardware Setup
 
@@ -31,11 +31,11 @@ Suggested hardware connection:
 
 The LED indicator driver provides the following functions:
 
-- `pir_led_indicator_init(gpio_num)` - Initialize the LED on the specified GPIO
-- `pir_led_indicator_set_dim()` - Set LED to dim state (unoccupied)
-- `pir_led_indicator_set_blink()` - Flash LED 3 times and then switch to bright
-- `pir_led_indicator_set_bright()` - Set LED to full brightness (occupied)
-- `pir_led_indicator_deinit()` - Deinitialize the LED and free resources
+- `gs_led_indicator_init(gpio_num)` - Initialize the LED on the specified GPIO
+- `gs_led_indicator_set_dim()` - Set LED to dim (idle) state
+- `gs_led_indicator_set_blink()` - Flash LED three times quickly
+- `gs_led_indicator_set_bright()` - Set LED to full brightness (active)
+- `gs_led_indicator_deinit()` - De-initialize the LED and free resources
 
 ## Configuration
 
@@ -45,7 +45,7 @@ The GPIO pin used for the LED indicator can be configured using menuconfig:
 idf.py menuconfig
 ```
 
-Navigate to: "Occupancy Sensor Configuration" → "LED Indicator GPIO Pin Number"
+Navigate to: "Generic Switch Configuration" → "LED Indicator GPIO Pin Number"
 
 Default settings:
 - GPIO pin: 6
@@ -54,8 +54,8 @@ Default settings:
 - Bright mode duty cycle: 100% brightness
 - Blink period: 500 ms (2 Hz)
 
-## Integration with Occupancy Detection
+## Integration with Switch Events
 
-The LED indicator is automatically controlled based on the occupancy state:
-- When motion is detected, the PIR sensor callback triggers the LED to enter bright blinking mode
-- When motion is no longer detected, the LED returns to dim mode 
+The LED indicator is automatically controlled based on switch events:
+* When the button is pressed, the GPIO interrupt triggers the LED to flash then optionally stay bright.
+* When the button is released (or after timeout), the LED returns to dim mode. 

@@ -2,18 +2,14 @@
 
 ## ✅ COMPLETED PROJECT STATUS
 
-**Current Phase:** Project Complete + Documentation Cleanup
-- ✅ Project Completed: Matter-enabled occupancy sensor with ESP32-C3 and HC-SR501 PIR sensor.
-- ✅ Successfully integrated with Apple Home via Matter protocol using QR codes.
-- ✅ Hardware assembled and deployed in repurposed HDD enclosure
-- ✅ Documentation updated and cleaned up (removed ESP32-S3 references, focused on ESP32-C3)
+**Current Phase:** Project Kick-off & Documentation Migration
+- ✅ Project base forked from Matter Occupancy Sensor
+- ✅ Repository renamed to **matter-generic-switch** and pushed to GitHub
+- ✅ ESP32-C3 SuperMini hardware selected; momentary push-button on GPIO 3
+- ✅ Initial documentation pass completed (README, setup, wiring, LED, overview)
 
-### Final Status
-- Successfully implemented a functional Matter occupancy sensor that integrates with Apple Home
-- Device reliably reports occupancy state changes and respects configured delay settings
-- Hardware and software components fully tested and documented
-- Project documentation completed including circuit diagram and assembly instructions
-- Most planned features implemented, with known limitations documented
+### Interim Status (post-migration)
+The original occupancy-sensor firmware is still present; design documents and code are being refactored.  The new Generic Switch device type has been documented; firmware changes will follow after `idf.py menuconfig` enables **Generic Switch** and PIR code is removed.
 
 ### Detailed Documentation
 - Complete circuit diagram available at [docs/circuit_diagram.md](docs/circuit_diagram.md)
@@ -47,36 +43,36 @@
 **Powering the System:**
 *   Via USB-C connection to the ESP32-C3 SuperMini board
 
----
+### Current Hardware Plan
 
-### Known Limitations
+* **Microcontroller:** ESP32-C3 SuperMini
+* **Input Device:** Momentary push-button (normally-open)
+* **Status LED:** 5 mm LED + 220 Ω resistor (GPIO 5, optional)
+* **Power:** USB-C 5 V
 
-1. **Matter Controller Compatibility**:
-   - Tested primarily with Apple Home
-   - Integration with other Matter controllers not fully verified
-
-2. **Console Warnings**:
-   - Non-critical warnings in console (`Config is NULL or mandatory features are missing`)
-   - RTC clock warnings (`GetClock_RealTimeMS() API: 6c`) are known issues in ESP-Matter
-
-3. **Configuration Interface**:
-   - Occupancy delay can be adjusted via Matter attributes, but Apple Home UI does not expose this setting
-   - For custom delay configuration, alternative Matter controllers would be needed
-
-4. **Performance**:
-   - 15-minute default delay is suitable for most home automation scenarios
-   - Motion detection range and sensitivity depend on PIR sensor adjustment and positioning
+| Signal | ESP32-C3 Pin | Notes |
+|--------|--------------|-------|
+| Button VCC | 3.3 V | Internal pull-up optional |
+| Button Signal | GPIO 3 | Interrupt on FALLING edge |
+| Button GND | GND | |
+| LED Anode | GPIO 5 | PWM brightness |
+| LED Cathode | GND | |
 
 ---
+
+### Known Limitations (pre-refactor)
+
+1. Existing codebase still implements OccupancySensing cluster; switch cluster not yet enabled.
+2. Console-log warnings from ESP-Matter remain (harmless).
+3. Controller testing limited to Apple Home.
 
 ### Future Enhancement Possibilities
 
-- OTA update capability for firmware updates
-- Advanced status indicators (multi-color LED patterns)
-- Integration with additional Matter controllers
-- Battery-powered operation (would require sleep mode implementation)
-- Weather-resistant enclosure for outdoor use
-- Matter security hardening beyond default implementation
+* OTA firmware updates
+* Multi-colour LED feedback
+* Battery power + deep sleep
+* IP-based wake-on-press optimisations
+* Enhanced security hardening
 
 ---
 

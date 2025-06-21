@@ -1,6 +1,31 @@
-# Project Todo List
+# Project Todo List – Generic Switch Migration
 
-20250116: Created
+*Created 2025-06-21 (migration from occupancy sensor project)*
+
+## Immediate Tasks
+
+1. **Firmware Refactor**
+   - [ ] Run `idf.py menuconfig` and enable **Generic Switch** device type; disable Occupancy Sensor.
+   - [ ] Remove PIR sensor driver and related logic from `app_main.cpp` and drivers folder.
+   - [ ] Implement GPIO interrupt handler for momentary button on GPIO 3.
+   - [ ] Map button events to Switch cluster attributes/events.
+
+2. **Documentation Rewrite (phase 2)**
+   - [ ] Rewrite `docs/design.md` focusing on switch architecture.
+   - [ ] Replace `docs/spec.md` with a concise Generic Switch spec (requirements & success criteria).
+
+3. **Hardware Validation**
+   - [ ] Verify debouncing strategy (<10 ms).
+   - [ ] Confirm push-button wiring and pull-up/down configuration.
+   - [ ] Validate LED PWM on GPIO 5.
+
+## Deferred
+* Remote-control automations testing on Google Home & Alexa
+* Battery-powered prototype using 18650 Li-ion + buck converter
+
+---
+
+## Archived Tasks (Occupancy Sensor)
 
 ## Next Steps
 

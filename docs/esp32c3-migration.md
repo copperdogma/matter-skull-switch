@@ -1,6 +1,6 @@
 # ESP32-C3 SuperMini Migration Guide
 
-This document provides detailed instructions for migrating the Matter Occupancy Sensor project from ESP32-S3 to ESP32-C3 SuperMini.
+This document provides detailed instructions for migrating the project codebase (originally written for ESP32-S3) to the ESP32-C3 SuperMini for the **Matter Generic Switch** device.
 
 ## Hardware Differences
 
@@ -27,8 +27,8 @@ Based on these constraints, here's our pin selection:
 
 | Function | ESP32-S3 Pin | ESP32-C3 Pin | Rationale |
 |----------|--------------|--------------|-----------|
-| PIR Sensor | GPIO 4 | GPIO 3 | Safe GPIO with ADC support, not a strapping pin |
-| LED Indicator | GPIO 6 | GPIO 10 | Safe general-purpose GPIO |
+| Push-Button | GPIO 4 | GPIO 3 | Safe GPIO (interrupt capable), not a strapping pin |
+| LED Indicator | GPIO 6 | GPIO 5 | Safe general-purpose GPIO |
 | I2C SDA (if needed) | GPIO 4 | GPIO 8 | Default I2C data line on C3 |
 | I2C SCL (if needed) | GPIO 5 | GPIO 9 | Default I2C clock line on C3 |
 

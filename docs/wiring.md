@@ -1,22 +1,22 @@
-# Wiring Guide for Matter Occupancy Sensor
+# Wiring Guide for Matter Generic Switch
 
 ## ESP32-C3 SuperMini Wiring
 
-### PIR Sensor Connections
+### Push-Button Connections
 
 ```
-ESP32-C3 SuperMini          HC-SR501 PIR
+ESP32-C3 SuperMini          Momentary Push-Button
 +------------+              +----------+
 |            |              |          |
 | GND -------+--------------+ GND      |
 |            |              |          |
-| 5V* -------+--------------+ VCC      |
+| 3.3V ------+--------------+ VCC      |
 |            |              |          |
-| GPIO3 ------+--------------+ OUT      |
+| GPIO3 -----+--------------+ SIGNAL   |
 |            |              |          |
 +------------+              +----------+
 
-* 3.3V can be used if your PIR sensor supports it
+*Use 3.3 V unless your button requires an external pull-up to 5 V.*
 ```
 
 ### LED Indicator
@@ -52,8 +52,8 @@ If using a USB-C breakout board with the ESP32-C3 SuperMini:
 
 ## Physical Mounting Recommendations
 
-1. Use Dupont connectors directly to ESP32 pins for PIR sensor and LED
-2. Make GND pigtail to ESP32 GND because we need two ground connections (PIR sensor and LED)
-3. Add small dab of non-conductive hot glue at connector bases for stability
-4. Mount PIR sensor at 7-10 ft height for optimal coverage
-5. Ensure ESP32 board is protected from dust and moisture 
+1. Use Dupont connectors directly to ESP32 pins for the push-button and LED.
+2. Make a GND pigtail to the ESP32 GND because two ground connections are needed (button and LED).
+3. Add a small dab of non-conductive hot glue at connector bases for stability.
+4. Ensure the push-button is accessible from outside the enclosure.
+5. Ensure the ESP32 board is protected from dust and moisture. 

@@ -1,4 +1,4 @@
-# ESP32 Matter Occupancy Sensor - Development Environment Setup
+# ESP32 Matter Generic Switch - Development Environment Setup
 
 ## Quick Reference
 
@@ -83,20 +83,20 @@ which python3  # Should point to ESP-IDF Python env (~/.espressif/python_env/...
 
 ```bash
 cd /path/to/your/projects_directory
-mkdir -p matter-occupancy-sensor/firmware-test
-cp -r ~/esp/esp-matter/examples/light/* matter-occupancy-sensor/firmware-test/
-cd matter-occupancy-sensor/firmware-test
+mkdir -p matter-generic-switch/firmware-test
+cp -r ~/esp/esp-matter/examples/light/* matter-generic-switch/firmware-test/
+cd matter-generic-switch/firmware-test
 idf.py set-target esp32c3
 idf.py build
 ```
 
-### 3.2 Create the Occupancy Sensor Project
+### 3.2 Create the Generic Switch Project
 
 ```bash
 cd /path/to/your/projects_directory
-mkdir -p matter-occupancy-sensor/firmware
-cp -r ~/esp/esp-matter/examples/sensors/* matter-occupancy-sensor/firmware/
-cd matter-occupancy-sensor/firmware
+mkdir -p matter-generic-switch/firmware
+cp -r ~/esp/esp-matter/examples/sensors/* matter-generic-switch/firmware/
+cd matter-generic-switch/firmware
 idf.py set-target esp32c3
 ```
 
@@ -125,7 +125,7 @@ Apply these key settings:
 
 Additionally, navigate to:
 ```
-Component config → ESP Matter → Device Types → [*] Occupancy Sensor
+Component config → ESP Matter → Device Types → [*] Generic Switch
 ```
 
 Build the project:
@@ -137,8 +137,8 @@ idf.py build
 
 Create a directory for certificates:
 ```bash
-mkdir -p matter-occupancy-sensor/credentials/dev-certs
-cd matter-occupancy-sensor/credentials/dev-certs
+mkdir -p matter-generic-switch/credentials/dev-certs
+cd matter-generic-switch/credentials/dev-certs
 ```
 
 ### 4.1 Generate Certificate Chain
@@ -173,9 +173,9 @@ Generate the partition binary:
 ```bash
 esp-matter-mfg-tool \
   -v 0xFFF1 -p 0x8000 \
-  --vendor-name "MyTestVendor" --product-name "OccupancySensor" \
+  --vendor-name "MyTestVendor" --product-name "GenericSwitch" \
   --hw-ver 1 --hw-ver-str "1.0.0" \
-  --mfg-date "2024-05-21" --serial-num "OCCSENSOR001" \
+  --mfg-date "2024-05-21" --serial-num "GSWITCH001" \
   --dac-key DAC_key.pem --dac-cert DAC_cert.pem \
   --pai -c PAI_cert.pem \
   --discriminator 3840 --passcode 20202021 \

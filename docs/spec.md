@@ -1,4 +1,6 @@
-# Matter Garage Occupancy Sensor
+# Matter Generic Switch – Specification
+
+> **Migration Notice (2025-06-21):** This specification originally targeted a garage occupancy sensor.  It is being repurposed for a single-endpoint **Generic Switch** (stateless, momentary) based on an ESP32-C3 SuperMini.  Sections below that describe motion detection, PIR hardware, or occupancy-specific requirements are outdated and will be removed or rewritten.
 
 20250116: Created by Cam Marsollier
 
