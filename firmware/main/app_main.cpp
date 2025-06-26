@@ -35,6 +35,8 @@
 // drivers implemented by this example
 #include "drivers/include/led_indicator.h"  // Still using LED helper
 
+#include <app/InteractionModelEngine.h>
+
 static const char *TAG = "app_main";
 
 // Use the Kconfig value directly
@@ -193,8 +195,69 @@ static esp_err_t register_switch_button()
         return ESP_FAIL;
     }
 
-    // Register callback for short press
-    iot_button_register_cb(hbtn, BUTTON_PRESS_UP, NULL, switch_button_event, NULL);
+    // Register callbacks mapped to Matter Switch Events
+
+    // Helper lambda to bind specific event type
+    auto reg = [&](button_event_t ev, button_cb_t fn) {
+        iot_button_register_cb(hbtn, ev, NULL, fn, NULL);
+    };
+
+    // PRESS DOWN -> InitialPress
+    reg(BUTTON_PRESS_DOWN, [](void*, void*) {
+        chip::app::Clusters::Switch::Events::InitialPress::Type e;
+        e.newPosition = 1;
+        chip::app::InteractionModelEngine::GetInstance()->SendEvent(g_switch_endpoint_id, e);
+    });
+
+    // SHORT RELEASE -> ShortRelease and toggle attribute
+    reg(BUTTON_PRESS_UP, [](void*, void*) {
+        ESP_LOGI(TAG, "Generic Switch: Short press");
+        chip::app::Clusters::Switch::Events::ShortRelease::Type e;
+        e.previousPosition = 1;
+        chip::app::InteractionModelEngine::GetInstance()->SendEvent(g_switch_endpoint_id, e);
+
+        // Toggle CurrentPosition attribute (0/1)
+        attribute_t * attr = attribute::get(g_switch_endpoint_id, chip::app::Clusters::Switch::Id,
+                                            chip::app::Clusters::Switch::Attributes::CurrentPosition::Id);
+        if (attr) {
+            esp_matter_attr_val_t val = esp_matter_invalid(NULL);
+            attribute::get_val(attr, &val);
+            val.val.u8 = (val.val.u8 == 0) ? 1 : 0;
+            attribute::update(g_switch_endpoint_id, chip::app::Clusters::Switch::Id,
+                              chip::app::Clusters::Switch::Attributes::CurrentPosition::Id, &val);
+        }
+        pir_led_indicator_set_blink();
+    });
+
+    // LONG PRESS START -> LongPress
+    reg(BUTTON_LONG_PRESS_START, [](void*, void*) {
+        ESP_LOGI(TAG, "Generic Switch: Long press start");
+        chip::app::Clusters::Switch::Events::LongPress::Type e;
+        e.newPosition = 1;
+        chip::app::InteractionModelEngine::GetInstance()->SendEvent(g_switch_endpoint_id, e);
+    });
+
+    // LONG PRESS UP -> LongRelease
+    reg(BUTTON_LONG_PRESS_UP, [](void*, void*) {
+        chip::app::Clusters::Switch::Events::LongRelease::Type e;
+        e.previousPosition = 1;
+        chip::app::InteractionModelEngine::GetInstance()->SendEvent(g_switch_endpoint_id, e);
+    });
+
+    // DOUBLE CLICK complete -> MultiPressComplete (2 presses)
+    reg(BUTTON_DOUBLE_CLICK, [](void*, void*) {
+        ESP_LOGI(TAG, "Generic Switch: Double click");
+        chip::app::Clusters::Switch::Events::MultiPressComplete::Type e;
+        e.newPosition = 1;
+        e.currentNumberOfPresses = 2;
+        chip::app::InteractionModelEngine::GetInstance()->SendEvent(g_switch_endpoint_id, e);
+    });
+
+    // Set MultiPressMax attribute =2
+    attribute::update(g_switch_endpoint_id, chip::app::Clusters::Switch::Id,
+                      chip::app::Clusters::Switch::Attributes::MultiPressMax::Id,
+                      esp_matter_uint8(2));
+
     return ESP_OK;
 }
 
