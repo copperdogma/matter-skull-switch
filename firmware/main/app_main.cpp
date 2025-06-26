@@ -154,7 +154,7 @@ static esp_err_t factory_reset_button_register()
 
 static uint16_t g_switch_endpoint_id = 0;
 
-static void switch_button_event(void *arg)
+static void switch_button_event(void *btn_handle, void *usr_data)
 {
     ESP_LOGI(TAG, "Generic Switch: Button pressed (GPIO 3)");
 
@@ -194,7 +194,7 @@ static esp_err_t register_switch_button()
     }
 
     // Register callback for short press
-    iot_button_register_cb(hbtn, BUTTON_CB_RELEASE, (void (*)(void*, void*))switch_button_event, NULL);
+    iot_button_register_cb(hbtn, BUTTON_PRESS_UP, NULL, switch_button_event, NULL);
     return ESP_OK;
 }
 
