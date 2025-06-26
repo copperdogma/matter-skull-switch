@@ -28,7 +28,7 @@ static int s_blink_counter = 0;
 // Function prototypes
 static void blink_timer_callback(void *arg);
 
-esp_err_t pir_led_indicator_init(int gpio_num) {
+esp_err_t led_indicator_init(int gpio_num) {
     if (s_led_gpio != -1) {
         ESP_LOGW(TAG, "LED indicator already initialized");
         return ESP_ERR_INVALID_STATE;
@@ -65,13 +65,13 @@ esp_err_t pir_led_indicator_init(int gpio_num) {
     ESP_ERROR_CHECK(esp_timer_create(&blink_timer_args, &s_blink_timer));
 
     // Initialize with dim brightness
-    ESP_ERROR_CHECK(pir_led_indicator_set_dim());
+    ESP_ERROR_CHECK(led_indicator_set_dim());
 
     ESP_LOGI(TAG, "LED indicator initialized on GPIO %d", s_led_gpio);
     return ESP_OK;
 }
 
-esp_err_t pir_led_indicator_set_dim(void) {
+esp_err_t led_indicator_set_dim(void) {
     if (s_led_gpio == -1) {
         return ESP_ERR_INVALID_STATE;
     }
@@ -90,7 +90,7 @@ esp_err_t pir_led_indicator_set_dim(void) {
     return ESP_OK;
 }
 
-esp_err_t pir_led_indicator_set_bright(void) {
+esp_err_t led_indicator_set_bright(void) {
     if (s_led_gpio == -1) {
         return ESP_ERR_INVALID_STATE;
     }
@@ -109,7 +109,7 @@ esp_err_t pir_led_indicator_set_bright(void) {
     return ESP_OK;
 }
 
-esp_err_t pir_led_indicator_set_blink(void) {
+esp_err_t led_indicator_set_blink(void) {
     if (s_led_gpio == -1) {
         return ESP_ERR_INVALID_STATE;
     }
@@ -133,7 +133,7 @@ esp_err_t pir_led_indicator_set_blink(void) {
     return ESP_OK;
 }
 
-esp_err_t pir_led_indicator_deinit(void) {
+esp_err_t led_indicator_deinit(void) {
     if (s_led_gpio == -1) {
         return ESP_ERR_INVALID_STATE;
     }
@@ -180,7 +180,7 @@ static void blink_timer_callback(void *arg) {
             s_is_blinking = false;
             
             // Set to steady bright
-            pir_led_indicator_set_bright();
+            led_indicator_set_bright();
             return;
         }
     }

@@ -73,6 +73,7 @@ The original occupancy-sensor firmware is still present; design documents and co
 * Battery power + deep sleep
 * IP-based wake-on-press optimisations
 * Enhanced security hardening
+* Long press, double-press, etc. What's possible? What should we support?
 
 ---
 

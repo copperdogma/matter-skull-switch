@@ -118,15 +118,16 @@ Apply these key settings:
 | | Device Software Version Number | 1 |
 | | Default Device type | 22 (Root Node) |
 | **Component config → ESP Matter** | | |
-| | Device Info Provider options | Device Info - Custom |
-| | Use ESP-Matter data model | ✓ (Checked) |
+| | Device Info Provider options | Device Info – Custom |
+| | Use ESP-Matter Data Model | ✓ (Checked) |
 | | Enable Matter Server | ✓ (Checked) |
-| | Initialize Thread stack | ✗ (Unchecked) |
+| | Initialize Thread Stack | ✗ (Unchecked) |
 
-Additionally, navigate to:
-```
-Component config → ESP Matter → Device Types → [*] Generic Switch
-```
+Scroll farther down to **Component config → ESP Matter → Select Supported Matter Clusters** and set:
+
+The menu item lists every cluster that can be compiled into your firmware.  Leave **Basic** and **Identify** enabled (they are mandatory on the root node) and make sure **Switch** and **Switch Events** stay enabled.  You may un-check large, unused clusters (Light, Thermostat, OTA Provider, etc.) to save flash/RAM, but it is optional.
+
+> Device-type assignment (e.g. "Generic Switch") is done entirely in `app_main.cpp` when you call `generic_switch::create(...)`.  The menu does **not** include a "Device Types" page in recent ESP-Matter releases.
 
 Build the project:
 ```bash

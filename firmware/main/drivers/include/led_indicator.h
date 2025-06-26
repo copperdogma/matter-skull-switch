@@ -13,14 +13,14 @@ extern "C" {
  * @param gpio_num GPIO pin number for the LED
  * @return esp_err_t ESP_OK on success, error code otherwise
  */
-esp_err_t pir_led_indicator_init(int gpio_num);
+esp_err_t led_indicator_init(int gpio_num);
 
 /**
  * @brief Set the LED indicator to dim state (device is on, no motion detected)
  * 
  * @return esp_err_t ESP_OK on success, error code otherwise
  */
-esp_err_t pir_led_indicator_set_dim(void);
+esp_err_t led_indicator_set_dim(void);
 
 /**
  * @brief Set the LED indicator to flash 3 times rapidly (motion detected)
@@ -28,21 +28,21 @@ esp_err_t pir_led_indicator_set_dim(void);
  * 
  * @return esp_err_t ESP_OK on success, error code otherwise
  */
-esp_err_t pir_led_indicator_set_blink(void);
+esp_err_t led_indicator_set_blink(void);
 
 /**
  * @brief Set the LED indicator to full brightness (occupancy active)
  * 
  * @return esp_err_t ESP_OK on success, error code otherwise
  */
-esp_err_t pir_led_indicator_set_bright(void);
+esp_err_t led_indicator_set_bright(void);
 
 /**
  * @brief Deinitialize the LED indicator
  * 
  * @return esp_err_t ESP_OK on success, error code otherwise
  */
-esp_err_t pir_led_indicator_deinit(void);
+esp_err_t led_indicator_deinit(void);
 
 #ifdef __cplusplus
 }
