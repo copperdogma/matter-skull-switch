@@ -1,5 +1,4 @@
 set(COMPONENT_SRCS
-    "pir_sensor.c"
     "led_indicator.c"
 )
 
