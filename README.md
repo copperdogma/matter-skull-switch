@@ -15,6 +15,7 @@ idf.py -p /dev/tty.usbmodemXXX flash monitor
 # Current commissioning codes
 QR Code: MT:Y.K90GSY00KA0648G00
 Manual Code: 34970112332
+https://project-chip.github.io/connectedhomeip/qrcode.html?data=MT%3AY.K90GSY00KA0648G00
 ```
 
 ## Features
@@ -100,7 +101,7 @@ The Generic Switch exposes a single stateless switch on endpoint 1 with the foll
 
 ### Apple Home Integration Notes
 * Apple Home may briefly display "No Code Needed" if the device was recently removed and re-added.
-* Device type is correctly recognised as **Generic Switch** after commissioning.
+* **UI quirk:** as of iOS 17 Apple Home hasn't added a dedicated tile for the Matter *Generic Switch* device-type. The accessory therefore appears with the generic name "Accessory" and a grey icon. Automations still receive the correct *Switch Events* (e.g. "Button 1 Pressed", "Released").
 * Switch Events appear in automations as "Button 1 Pressed" / "Released."
 
 ### Known Limitations

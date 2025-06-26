@@ -155,6 +155,7 @@ static esp_err_t factory_reset_button_register()
 /* -------------------------------------------------------------------------- */
 
 static uint16_t g_switch_endpoint_id = 0;
+static uint16_t g_ui_endpoint_id = 0; // On/Off endpoint for Home UI
 
 static void switch_button_event(void *btn_handle, void *usr_data)
 {
@@ -226,6 +227,19 @@ static esp_err_t register_switch_button()
                 val.val.u8 = (val.val.u8 == 0) ? 1 : 0;
                 attribute::update(g_switch_endpoint_id, chip::app::Clusters::Switch::Id,
                                   chip::app::Clusters::Switch::Attributes::CurrentPosition::Id, &val);
+            }
+
+            // Mirror to UI OnOff attribute (toggle true/false)
+            if (g_ui_endpoint_id) {
+                attribute_t * onoff_attr = attribute::get(g_ui_endpoint_id, chip::app::Clusters::OnOff::Id,
+                                                         chip::app::Clusters::OnOff::Attributes::OnOff::Id);
+                if (onoff_attr) {
+                    esp_matter_attr_val_t oval = esp_matter_invalid(NULL);
+                    attribute::get_val(onoff_attr, &oval);
+                    oval.val.b = !oval.val.b;
+                    attribute::update(g_ui_endpoint_id, chip::app::Clusters::OnOff::Id,
+                                      chip::app::Clusters::OnOff::Attributes::OnOff::Id, &oval);
+                }
             }
         }
         led_indicator_set_blink();
@@ -310,6 +324,22 @@ extern "C" void app_main()
     ABORT_APP_ON_FAILURE(switch_ep != nullptr, ESP_LOGE(TAG, "Failed to create generic_switch endpoint"));
 
     g_switch_endpoint_id = endpoint::get_id(switch_ep);
+
+    // ------------------------------------------------------------------
+    // Create On/Off Light endpoint for UI representation (stateful tile)
+    // ------------------------------------------------------------------
+
+    endpoint::on_off_light::config_t light_cfg; // default
+    endpoint_t *ui_ep = endpoint::on_off_light::create(node, &light_cfg, ENDPOINT_FLAG_NONE, NULL);
+    ABORT_APP_ON_FAILURE(ui_ep != nullptr, ESP_LOGE(TAG, "Failed to create on_off_light endpoint"));
+    g_ui_endpoint_id = endpoint::get_id(ui_ep);
+
+    // Ensure OnOff starts at false (off)
+    {
+        esp_matter_attr_val_t off_val = esp_matter_bool(false);
+        attribute::update(g_ui_endpoint_id, chip::app::Clusters::OnOff::Id,
+                          chip::app::Clusters::OnOff::Attributes::OnOff::Id, &off_val);
+    }
 
     // Register button on GPIO3 to drive the switch events/attributes
     err = register_switch_button();
