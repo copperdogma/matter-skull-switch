@@ -43,6 +43,7 @@ https://project-chip.github.io/connectedhomeip/qrcode.html?data=MT%3AY.K90GSY00K
 | 5V/3.3V      | Button VCC    |                         |
 | GPIO 3       | Switch Signal | Active-high when button pressed |
 | GPIO 5       | LED Anode (+) | Through 220 Ω resistor   (optional) |
+| GPIO 9       | BOOT Button   | Factory reset (built-in) |
 | GND          | LED Cathode (-)|                         |
 
 *For a detailed wiring diagram, see [docs/circuit_diagram.md](docs/circuit_diagram.md)*
@@ -93,16 +94,33 @@ The Generic Switch exposes a single stateless switch on endpoint 1 with the foll
 
 ### Commissioning Tips
 1. **Always use the current QR/manual codes** printed to the serial monitor after flashing.
-2. **Factory reset:** Hold the BOOT button for ~10 s while powering up.
+2. **Factory reset:** Hold the BOOT button (GPIO 9) for 5+ seconds, then release.
 3. **If commissioning fails:**
    - Remove the device from the controller app.
    - Perform a factory reset.
-   - Re-commission using the new codes from the serial monitor.
+   - Re-commission using the same codes (QR codes don't change after factory reset).
 
 ### Apple Home Integration Notes
 * Apple Home may briefly display "No Code Needed" if the device was recently removed and re-added.
 * **UI quirk:** as of iOS 17 Apple Home hasn't added a dedicated tile for the Matter *Generic Switch* device-type. The accessory therefore appears with the generic name "Accessory" and a grey icon. Automations still receive the correct *Switch Events* (e.g. "Button 1 Pressed", "Released").
 * Switch Events appear in automations as "Button 1 Pressed" / "Released."
+
+### Factory Reset
+
+**When to use factory reset:**
+- Device shows "already added to another home" error
+- Commissioning fails repeatedly
+- Need to clear all pairing data and start fresh
+
+**How to perform factory reset:**
+1. **Button method:** Hold the BOOT button (GPIO 9) for 5+ seconds, then release
+2. **Console method:** In serial monitor, type `factory_reset confirm` and press Enter
+
+**What factory reset does:**
+- Clears all pairing data and fabric information
+- Clears Wi-Fi credentials
+- **Keeps the same QR/manual codes** (this is correct behavior)
+- Device will restart and be ready for new commissioning
 
 ### Known Limitations
 
@@ -116,6 +134,30 @@ The Generic Switch exposes a single stateless switch on endpoint 1 with the foll
 - **Input:** Single momentary push-button (GPIO 3)
 - **Connectivity:** Wi-Fi 802.11 b/g/n, Bluetooth 5.0 LE
 - **Development:** ESP-IDF v5.4.1, ESP-Matter SDK
+
+## Troubleshooting
+
+### Common Issues
+
+**"Already added to another home" error:**
+- Perform factory reset: Hold BOOT button (GPIO 9) for 5+ seconds, then release
+- Remove device from Apple Home completely
+- Re-add using the same QR code (codes don't change after factory reset)
+
+**Button not responding:**
+- Ensure you're using GPIO 9 (BOOT button), not GPIO 0
+- Check button wiring and connections
+- Verify firmware is flashed correctly
+
+**Commissioning fails:**
+- Check Wi-Fi credentials and network connectivity
+- Ensure device is within range of your router
+- Try factory reset and re-commission
+
+**Serial monitor not connecting:**
+- Check USB cable and port
+- Kill any existing monitor processes: `pkill -f monitor`
+- Try different USB port
 
 ## References
 

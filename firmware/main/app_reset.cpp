@@ -19,6 +19,7 @@ static bool perform_factory_reset = false;
 
 static void button_factory_reset_pressed_cb(void *arg, void *data)
 {
+    ESP_LOGI(TAG, "Button pressed - long press detected!");
     if (!perform_factory_reset) {
         ESP_LOGI(TAG, "Factory reset triggered. Release the button to start factory reset.");
         perform_factory_reset = true;
@@ -27,11 +28,18 @@ static void button_factory_reset_pressed_cb(void *arg, void *data)
 
 static void button_factory_reset_released_cb(void *arg, void *data)
 {
+    ESP_LOGI(TAG, "Button released!");
     if (perform_factory_reset) {
         ESP_LOGI(TAG, "Starting factory reset");
         esp_matter::factory_reset();
         perform_factory_reset = false;
     }
+}
+
+// Simple callback to debug any button press
+static void button_any_press_cb(void *arg, void *data)
+{
+    ESP_LOGI(TAG, "Button pressed (any press detected)!");
 }
 
 esp_err_t app_reset_button_register(void *handle)
@@ -42,6 +50,10 @@ esp_err_t app_reset_button_register(void *handle)
     }
     button_handle_t button_handle = (button_handle_t)handle;
     esp_err_t err = ESP_OK;
+    
+    // Add debug callback for any press
+    err |= iot_button_register_cb(button_handle, BUTTON_PRESS_DOWN, NULL, button_any_press_cb, NULL);
+    
     err |= iot_button_register_cb(button_handle, BUTTON_LONG_PRESS_HOLD, NULL, button_factory_reset_pressed_cb, NULL);
     err |= iot_button_register_cb(button_handle, BUTTON_PRESS_UP, NULL, button_factory_reset_released_cb, NULL);
     return err;

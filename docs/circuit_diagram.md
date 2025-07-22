@@ -66,9 +66,10 @@
 - **Power Supply**: The system is powered via the ESP32-C3 SuperMini's USB-C port
 - **Switch**: The push-button is read by GPIO 3 with internal pull-up enabled and debounced in software.
 - **Signal Logic**: GPIO 3 reads LOW when the button is pressed (active-low) and HIGH when released.
+- **BOOT Button**: Built-in on GPIO 9, used for factory reset (hold 5+ seconds, then release)
 - **LED Status**:
-  - Dim/Low brightness: System powered and ready (no motion detected)
-  - Bright/Blinking: Motion detected
+  - Dim/Low brightness: System powered and ready
+  - Bright/Blinking: Button press detected or factory reset in progress
 
 ### Assembly Tips:
 1. Use Dupont connectors for all connections for easy assembly/disassembly

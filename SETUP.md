@@ -221,7 +221,7 @@ cp factory_nvs_output/fff1_8000/{UUID}/{UUID}-partition.bin mfg_nvs.bin
 | **Serial Port Not Found** | Double-check the serial port name (e.g., `/dev/tty.usbmodemXXXX`). Ensure you have the necessary USB drivers (e.g., CH340/CH341 or CP210x) |
 | **Build Errors** | Carefully read the error messages. They often point to configuration issues in `sdkconfig` or problems in the code |
 | **Flashing Fails** | Ensure the board is in bootloader mode. Check the USB cable and connection. Try a different USB port |
-| **Commissioning failures** | Factory reset: Hold BOOT/GPIO0 button for ~10s during power cycle <br>Remove device from Matter controller app <br>Check serial monitor for current QR code and pairing code |
+| **Commissioning failures** | Factory reset: Hold BOOT button (GPIO 9) for 5+ seconds, then release <br>Remove device from Matter controller app <br>QR codes remain the same after factory reset (correct behavior) |
 
 ## Primary Reference Documents
 - [ESP-Matter Programming Guide](https://docs.espressif.com/projects/esp-matter/en/latest/esp32/developing.html)

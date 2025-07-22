@@ -36,6 +36,8 @@
 #include "drivers/include/led_indicator.h"  // Still using LED helper
 
 #include <esp_matter_event.h>
+#include <esp_console.h>
+#include <esp_vfs_dev.h>
 
 static const char *TAG = "app_main";
 
@@ -47,7 +49,7 @@ using namespace esp_matter::endpoint;
 using namespace chip::app::Clusters;
 
 // Define reset button GPIO
-#define BUTTON_GPIO CONFIG_BSP_BUTTON_GPIO
+#define BUTTON_GPIO CONFIG_BSP_BUTTON_GPIO  // GPIO 9 on ESP32-C3 SuperMini
 #define BSP_BUTTON_NUM 0
 
 static void open_commissioning_window_if_necessary()
@@ -130,7 +132,7 @@ static esp_err_t factory_reset_button_register()
     };
     
     button_gpio_config_t gpio_config = {
-        .gpio_num = 0,               // Default GPIO 0 (Boot button)
+        .gpio_num = 9,               // GPIO 9 (BOOT button on ESP32-C3 SuperMini)
         .active_level = 0,           // Active low
         .enable_power_save = false,  // No power save
         .disable_pull = false,       // Use internal pull-up
@@ -278,10 +280,57 @@ static esp_err_t register_switch_button()
     return ESP_OK;
 }
 
+// Simple factory reset trigger - will reset after 10 seconds
+static void trigger_factory_reset_timer(void)
+{
+    ESP_LOGW(TAG, "=== FACTORY RESET TRIGGERED ===");
+    ESP_LOGW(TAG, "Device will reset in 10 seconds...");
+    ESP_LOGW(TAG, "Unplug power now if you want to cancel!");
+    
+    vTaskDelay(pdMS_TO_TICKS(10000)); // Wait 10 seconds
+    
+    ESP_LOGI(TAG, "Starting factory reset NOW");
+    esp_matter::factory_reset();
+}
+
+// Console command for factory reset
+static int factory_reset_cmd(int argc, char **argv)
+{
+    if (argc == 2 && strcmp(argv[1], "confirm") == 0) {
+        // Start the reset in a new task
+        xTaskCreate([](void*){ trigger_factory_reset_timer(); vTaskDelete(NULL); }, 
+                   "factory_reset", 4096, NULL, 5, NULL);
+        return 0;
+    } else {
+        printf("Usage: factory_reset confirm\n");
+        printf("WARNING: This will erase all pairing data!\n");
+        return 1;
+    }
+}
+
+static void register_factory_reset_console_cmd()
+{
+    esp_console_cmd_t cmd = {
+        .command = "factory_reset",
+        .help = "Perform factory reset (use 'factory_reset confirm')",
+        .hint = NULL,
+        .func = &factory_reset_cmd,
+    };
+    esp_console_cmd_register(&cmd);
+}
+
 extern "C" void app_main()
 {
     /* Initialize the ESP NVS layer */
     nvs_flash_init();
+
+    /* Initialize console for factory reset command */
+    esp_console_repl_t *repl = NULL;
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
+    esp_console_new_repl_uart(&uart_config, &repl_config, &repl);
+    register_factory_reset_console_cmd();
+    esp_console_start_repl(repl);
 
     /* Initialize push button on the dev-kit to reset the device */
     esp_err_t err = factory_reset_button_register();

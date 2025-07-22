@@ -35,11 +35,11 @@ CONFIG_MBEDTLS_HKDF_C=y
 # unique local addresses for fabrics(MAX_FABRIC), a link local address(1)
 CONFIG_LWIP_IPV6_NUM_ADDRESSES=6
 
-# ESP32-DevKitC Settings
+# ESP32-C3 SuperMini Settings
 # Buttons
 CONFIG_BSP_BUTTONS_NUM=1
 CONFIG_BSP_BUTTON_1_TYPE_GPIO=y
-CONFIG_BSP_BUTTON_1_GPIO=0
+CONFIG_BSP_BUTTON_1_GPIO=9
 CONFIG_BSP_BUTTON_1_LEVEL=0
 
 # Enable OTA Requestor
