@@ -152,6 +152,11 @@ static void start_pulse()
             gpio_set_level(SIGNAL_GPIO, 0);
             g_pulse_active = false;
             ESP_LOGI(TAG, "Pulse ended - GPIO %d LOW", SIGNAL_GPIO);
+            
+            // Update Matter attribute back to OFF
+            esp_matter_attr_val_t val = esp_matter_bool(false);
+            attribute::update(g_switch_endpoint_id, OnOff::Id, OnOff::Attributes::OnOff::Id, &val);
+            ESP_LOGI(TAG, "Matter attribute updated to OFF");
         },
         .arg = nullptr,
         .name = "pulse_timer"

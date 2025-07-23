@@ -12,6 +12,8 @@ cd firmware
 idf.py set-target esp32c3
 idf.py reconfigure
 idf.py build
+# Find the correct port
+ls /dev/cu.*
 idf.py -p /dev/tty.usbmodemXXX flash monitor
 ```
 
