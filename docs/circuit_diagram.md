@@ -37,8 +37,8 @@
          +-------------------------+                                   
 
          Signal Levels:
-         GPIO4 HIGH (3.3V) = "GO!" signal
-GPIO4 LOW  (0V)    = Stop/Reset signal
+         GPIO4 HIGH (3.3V) = "GO!" signal (500ms pulse)
+GPIO4 LOW  (0V)    = Idle state
 ```
 
 ### Signal Connection Options
@@ -96,9 +96,9 @@ Animatronic Response:
 
 ### Notes:
 - **Power Supply**: System powered via ESP32-C3 SuperMini's USB-C port
-- **Signal Logic**: GPIO 4 outputs HIGH (3.3V) for "GO!" signal, LOW (0V) for stop/reset
+- **Signal Logic**: GPIO 4 outputs HIGH (3.3V) for 500ms "GO!" pulse, then returns to LOW (0V)
 - **Pulse Mode**: Default 500ms pulse when Matter switch turned "ON"
-- **Toggle Mode**: GPIO follows Matter switch state (ON = HIGH, OFF = LOW)
+- **Auto-Reset**: Matter switch state automatically returns to OFF after pulse
 - **BOOT Button**: Built-in on GPIO 9, used for factory reset (hold 5+ seconds)
 - **Signal Range**: Up to 30cm cable length inside skull enclosure
 - **Protection**: Consider pull-down resistor on animatronic side for noise immunity

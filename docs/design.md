@@ -91,11 +91,10 @@ This document details the technical design and implementation of the ESP32-C3 Su
   - Basic.NodeLabel: "Skull Switch"
 
 ### 3.3. GPIO Output Logic
-- **Pulse Mode (default)**:
-  - On Matter "ON" command: GPIO 4 goes HIGH for configurable duration (default 500ms), then LOW
-- On Matter "OFF" command: GPIO 4 goes LOW
-- **Toggle Mode (optional)**:
-  - GPIO 4 follows Matter switch state (ON = HIGH, OFF = LOW)
+- **Pulse Mode**:
+  - On Matter "ON" command: GPIO 4 goes HIGH for configurable duration (default 500ms), then automatically LOW
+  - On Matter "OFF" command: GPIO 4 goes LOW immediately
+  - Matter switch state automatically returns to OFF after pulse completes
 - **Debouncing**: 10ms minimum between state changes
 - **Timing**: <100ms from Matter command to GPIO change
 

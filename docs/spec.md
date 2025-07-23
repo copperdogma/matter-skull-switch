@@ -64,14 +64,14 @@ Create a reliable, Matter-compatible On/Off Switch using ESP32-C3 SuperMini to r
 
 ### 3. GPIO Signal Behavior
 - Signal Timing:
-  - **Pulse Mode (Default):** GPIO goes HIGH for configured duration, then LOW
-  - **Toggle Mode (Optional):** GPIO state follows Matter switch state
+  - **Pulse Mode:** GPIO goes HIGH for configured duration, then automatically LOW
   - **Pulse Duration:** 500ms default, configurable 50ms-5000ms
   - **Signal Voltage:** 3.3V ± 0.1V
+  - **Auto-Reset:** Matter switch state automatically returns to OFF after pulse
 
 - Signal Response:
-  - Matter "ON" command → GPIO HIGH within 100ms
-  - Matter "OFF" command → GPIO LOW within 100ms
+  - Matter "ON" command → GPIO HIGH within 100ms → GPIO LOW after pulse duration
+  - Matter "OFF" command → GPIO LOW immediately
   - Network latency: < 500ms from app tap to GPIO change
   - Hardware debouncing: 10ms minimum between state changes
 

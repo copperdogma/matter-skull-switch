@@ -135,12 +135,12 @@ Action: _______/‾‾‾‾‾‾‾‾‾‾‾‾\_____
                (Random audio plays)
 ```
 
-### Toggle Mode (Optional)
+### Pulse Mode (Current Implementation)
 ```
-Matter "ON":  GPIO4 goes HIGH and stays HIGH
-Matter "OFF": GPIO4 goes LOW
+Matter "ON":  GPIO4 goes HIGH for 500ms, then automatically LOW
+Matter "OFF": GPIO4 goes LOW immediately
 
-Use for continuous effects or state-based animations
+Note: Toggle mode not implemented in current version - only pulse mode available
 ```
 
 ### Edge Detection
