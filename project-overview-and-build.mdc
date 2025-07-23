@@ -3,7 +3,7 @@
 **Purpose:** This project develops a Matter-enabled **On/Off Switch** using an ESP32-C3 SuperMini to control animatronic skulls and Halloween effects. When activated via Matter (Apple Home, Google Home, Amazon Alexa), the device sends a GPIO "GO!" signal to trigger audio playback on connected animatronic devices.
 
 **Key Technologies:**
-*   **Hardware:** ESP32-C3 SuperMini, GPIO output signal, optional status LED.
+*   **Hardware:** ESP32-C3 SuperMini, GPIO output signal.
 *   **Firmware:** ESP-IDF (Espressif IoT Development Framework).
 *   **Connectivity:** Wi-Fi.
 *   **Smart Home Protocol:** Matter 1.4.
@@ -46,7 +46,7 @@ matter-skull-switch/
 
 The skull switch uses these GPIO connections:
 *   **GPIO 3:** Signal output to animatronic controller ("GO!" pulse)
-*   **GPIO 5:** Status LED (optional, with 220Ω resistor)
+
 *   **GPIO 9:** BOOT button for factory reset (built-in)
 *   **3.3V/GND:** Power and ground connections
 

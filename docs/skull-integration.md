@@ -28,7 +28,7 @@ Skull Switch (ESP32-C3)      Animatronic Controller (ESP32)
 ```
 Skull Switch                 Optocoupler              Animatronic Controller
 +------------+              +------------+            +------------------+
-| GPIO3 -----|--[220Ω]-----|---> LED    |            |                  |
+| GPIO3 -----|--[220Ω]-----|---> GPIO4  |            |                  |
 |            |              |            |     +------|---> GPIO4        |
 | GND -------|--------------|---> GND    |     |      |                  |
 +------------+              |            |  Collector |                  |
@@ -193,7 +193,7 @@ void triggerSequence() {
 ```
 Components:
 - ESP32-C3: ~50mA active, ~10µA deep sleep
-- Status LED: ~5mA when on
+
 - GPIO output: ~1mA when HIGH
 
 1000mAh Battery Life:
@@ -221,9 +221,9 @@ Components:
 ### Power Issues
 | Problem | Symptoms | Solution |
 |---------|----------|----------|
-| Device won't start | No LED, no network | Check USB-C power, verify 5V supply |
+| Device won't start | No network | Check USB-C power, verify 5V supply |
 | Frequent resets | Unstable operation | Check power consumption, add capacitors |
-| Battery drains fast | Short runtime | Implement sleep modes, reduce LED usage |
+| Battery drains fast | Short runtime | Implement sleep modes |
 
 ### Matter Integration Issues
 | Problem | Symptoms | Solution |

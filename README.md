@@ -33,7 +33,7 @@ https://project-chip.github.io/connectedhomeip/qrcode.html?data=MT%3AY.K90GSY00K
 |-----------|---------|
 | **ESP32-C3 SuperMini** | Single-core 160 MHz, 400KB SRAM, 4MB Flash, Wi-Fi, BLE 5.0 |
 | **GPIO Output Signal** | Triggers connected animatronic devices |
-| **Status LED (optional)** | Visual feedback for device status |
+
 
 ## Hardware Connections
 
@@ -42,9 +42,8 @@ https://project-chip.github.io/connectedhomeip/qrcode.html?data=MT%3AY.K90GSY00K
 | ESP32-C3 Pin | Connected To | Notes                   |
 |--------------|--------------|-------------------------|
 | GPIO 3       | Signal Out   | "GO!" signal to animatronic skull ESP32 |
-| GPIO 5       | LED Anode (+) | Through 220 Ω resistor (optional) |
 | GPIO 9       | BOOT Button   | Factory reset (built-in) |
-| GND          | LED Cathode (-) / Signal GND | Shared ground |
+| GND          | Signal GND    | Shared ground |
 | 3.3V         | Signal VCC (if needed) | Power for signal line |
 
 *The GPIO signal triggers the connected animatronic device to play a random audio file*

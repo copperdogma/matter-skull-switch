@@ -39,11 +39,7 @@ Create a reliable, Matter-compatible On/Off Switch using ESP32-C3 SuperMini to r
   - Configurable pulse duration (50ms to 5000ms)
   - Signal routing to animatronic controller via dupont or JST connectors
 
-- Status Indicators (Optional):
-  - GPIO 5 for status LED with 220Ω resistor
-  - Power indicator (solid when active)
-  - Network/Matter status (blinking during setup, solid when connected)
-  - Signal activity (brief flash on trigger)
+
 
 - Power Management:
   - USB-C power input (5V) with 3.3V regulation
@@ -133,7 +129,7 @@ Create a reliable, Matter-compatible On/Off Switch using ESP32-C3 SuperMini to r
 ### Hardware Specifications
 - **Microcontroller:** ESP32-C3 SuperMini
 - **GPIO Output:** GPIO 3, 3.3V logic level
-- **Status LED:** GPIO 5 (optional)
+
 - **Factory Reset:** GPIO 9 (BOOT button)
 - **Power Input:** USB-C 5V
 - **Signal Connector:** JST-XH 3-pin or dupont headers

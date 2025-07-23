@@ -28,7 +28,7 @@ This document details the technical design and implementation of the ESP32-C3 Su
 ### 1.2. Key Components
 - **ESP32-C3 SuperMini**: Main microcontroller, runs ESP-IDF and ESP-Matter SDK
 - **GPIO Output (GPIO 3)**: Sends 3.3V "GO!" pulse to animatronic controller
-- **Status LED (GPIO 5, optional)**: Visual feedback for status and activity
+
 - **USB-C Power**: 5V input, regulated to 3.3V for logic
 - **Animatronic Controller**: Receives "GO!" signal, plays audio/animates skull
 
@@ -41,7 +41,6 @@ This document details the technical design and implementation of the ESP32-C3 Su
 - **Form Factor**: Compact, fits inside skull enclosure
 - **Pin Usage**:
   - GPIO 3: Signal output ("GO!" pulse)
-  - GPIO 5: Status LED (optional)
   - GPIO 9: BOOT button (factory reset)
   - 3.3V, GND: Power and ground
 
@@ -52,10 +51,7 @@ This document details the technical design and implementation of the ESP32-C3 Su
 - **Protection**: Pull-down resistor on animatronic side recommended
 - **Isolation (optional)**: Optocoupler for noisy environments
 
-### 2.3. Status LED (GPIO 5, optional)
-- **Anode**: GPIO 5 via 220Ω resistor
-- **Cathode**: GND
-- **Behavior**: Blinks on activity, solid for status
+
 
 ### 2.4. Power System
 - **Input**: USB-C 5V
@@ -67,7 +63,7 @@ This document details the technical design and implementation of the ESP32-C3 Su
 - **Mounting**: 3M Dual Lock fasteners inside skull
 - **Cable Management**: Zip ties, adhesive anchors
 - **USB-C Access**: Port accessible for charging/programming
-- **LED**: Visible through hole or light pipe
+
 
 ---
 
@@ -103,10 +99,7 @@ This document details the technical design and implementation of the ESP32-C3 Su
 - **Debouncing**: 10ms minimum between state changes
 - **Timing**: <100ms from Matter command to GPIO change
 
-### 3.4. Status LED Logic
-- **Blink**: On activity (signal sent)
-- **Solid**: Device ready/commissioned
-- **Off**: Device not commissioned or error
+
 
 ### 3.5. Factory Reset
 - **Method**: Hold BOOT button (GPIO 9) for 5+ seconds

@@ -1,12 +1,11 @@
 # Matter Skull Switch - Circuit Diagram
 
-## ESP32-C3 SuperMini with GPIO Output Signal and Optional Status LED
+## ESP32-C3 SuperMini with GPIO Output Signal
 
 ### Components
 - ESP32-C3 SuperMini Board
 - Animatronic Controller (External ESP32 or similar)
-- 5mm LED (Red, Green, or Blue) - Optional
-- 220Ω Resistor - Optional for LED
+
 - JST-XH 3-pin Connector or Dupont Wires
 - Optional: Non-conductive hot glue for cable strain relief
 
@@ -28,12 +27,11 @@
          |                         |           |                      |
          |                         |           +----------------------+
          |                         |                        
-         |                         |                 LED (Optional)   
-         |                   GPIO5 -+-------+      +---> Anode (+)    
-         |                         |       |      |                   
-         |                         |      220Ω    |                   
-         |                         |       |      |                   
-         |                    GND -+-------+------+---> Cathode (-)   
+         |                         |                        
+         |                         |                        
+         |                         |                        
+         |                         |                        
+         |                         |                        
          |                         |                                   
          |                   USB-C |  <-- 5V Power Input              
          +-------------------------+                                   
@@ -68,10 +66,7 @@ GND          -> Ground Wire   -> GND
    - **Signal Type**: Digital output, configurable pulse or toggle mode
    - **Connection**: Direct to animatronic controller GPIO input
 
-2. **Status LED (Optional - GPIO 5):**
-   - **Anode (+, longer leg)**: Connect through 220Ω resistor to ESP32-C3 GPIO5
-   - **Cathode (-, shorter leg)**: Connect to ESP32-C3 GND
-   - **Function**: Shows device status and signal activity
+
 
 3. **Power Connections:**
    - **USB-C**: 5V power input to ESP32-C3 SuperMini
@@ -118,7 +113,7 @@ Animatronic Response:
 ### Enclosure Integration:
 - Compact design fits inside most animatronic skull enclosures
 - USB-C port accessible for charging and programming
-- LED visible through small hole or light pipe if used
+
 - Secure mounting with 3M Dual Lock fasteners
 - Cable management with zip ties and adhesive anchors
 

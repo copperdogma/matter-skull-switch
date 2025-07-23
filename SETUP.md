@@ -225,7 +225,7 @@ cp factory_nvs_output/fff1_8001/{UUID}/{UUID}-partition.bin mfg_nvs.bin
 ### 6.1 GPIO Configuration
 The skull switch uses GPIO 3 as the output signal to the animatronic controller:
 - **GPIO 3:** Signal output ("GO!" pulse)
-- **GPIO 5:** Status LED (optional)
+
 - **GPIO 9:** BOOT button (factory reset)
 
 ### 6.2 Signal Behavior

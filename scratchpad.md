@@ -26,13 +26,13 @@ This ESP32-C3 SuperMini-based Matter switch serves as a wireless trigger for ani
 **Final Hardware:**
 *   **Microcontroller:** ESP32-C3 SuperMini
 *   **Signal Output:** GPIO 3 (3.3V output to animatronic controller)
-*   **Status LED:** GPIO 5 with 220Ω resistor (optional)
+
 *   **Power:** USB-C 5V input (future: LiPo battery with TP4056 charging)
 
 **Pin Configuration:**
 
 *   **GPIO Signal Output (`SIGNAL_GPIO_NUM`):** GPIO 3
-*   **LED Indicator Pin (`LED_INDICATOR_GPIO_NUM`):** GPIO 5 (optional)
+
 *   **Factory Reset:** GPIO 9 (BOOT button, built-in)
 
 **Connections to Animatronic Controller:**
@@ -55,14 +55,13 @@ This ESP32-C3 SuperMini-based Matter switch serves as a wireless trigger for ani
 
 * **Microcontroller:** ESP32-C3 SuperMini
 * **Output Device:** GPIO signal to animatronic controller
-* **Status LED:** 5 mm LED + 220 Ω resistor (GPIO 5, optional)
+
 * **Power:** USB-C 5 V (future: LiPo battery)
 
 | Signal | ESP32-C3 Pin | Notes |
 |--------|--------------|-------|
 | Signal Output | GPIO 3 | 3.3V pulse to animatronic controller |
-| Status LED Anode | GPIO 5 | Through 220Ω resistor (optional) |
-| Status LED Cathode | GND | |
+
 | Animatronic Signal | GPIO 3 | Connected to animatronic GPIO input |
 | Shared Ground | GND | Common ground with animatronic |
 
