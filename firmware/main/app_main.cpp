@@ -33,7 +33,7 @@
 #include <platform/ESP32/ESP32Config.h>    // ESP32 specific implementations
 
 // drivers implemented by this example
-#include "drivers/include/led_indicator.h"  // Still using LED helper
+
 
 #include <esp_matter_event.h>
 #include <esp_console.h>
@@ -95,7 +95,7 @@ static void app_event_cb(const ChipDeviceEvent *event, intptr_t arg)
 }
 
 // This callback is invoked when clients interact with the Identify Cluster.
-// In the callback implementation, an endpoint can identify itself. (e.g., by flashing an LED or light).
+// In the callback implementation, an endpoint can identify itself. (e.g., by flashing a light).
 static esp_err_t app_identification_cb(identification::callback_type_t type, uint16_t endpoint_id, uint8_t effect_id,
                                        uint8_t effect_variant, void *priv_data)
 {
@@ -163,8 +163,7 @@ static void switch_button_event(void *btn_handle, void *usr_data)
 {
     ESP_LOGI(TAG, "Generic Switch: Button pressed (GPIO 3)");
 
-    // Optional: flash LED three times to give feedback
-    led_indicator_set_blink();
+
 
     // Update Switch cluster CurrentPosition attribute (toggle 0/1)
     attribute_t * attr = attribute::get(g_switch_endpoint_id, chip::app::Clusters::Switch::Id,
@@ -244,7 +243,7 @@ static esp_err_t register_switch_button()
                 }
             }
         }
-        led_indicator_set_blink();
+
     });
 
     reg(BUTTON_LONG_PRESS_START, [](void*, void*) {
@@ -336,9 +335,7 @@ extern "C" void app_main()
     esp_err_t err = factory_reset_button_register();
     ABORT_APP_ON_FAILURE(ESP_OK == err, ESP_LOGE(TAG, "Failed to initialize reset button, err:%d", err));
 
-    // Initialize LED indicator
-    err = led_indicator_init(CONFIG_LED_INDICATOR_GPIO_NUM);
-    ABORT_APP_ON_FAILURE(err == ESP_OK, ESP_LOGE(TAG, "Failed to initialize LED indicator, err:%d", err));
+
 
     /* Create a Matter node and add the mandatory Root Node device type on endpoint 0 */
     node::config_t node_config{}; // Explicitly zero-initialize

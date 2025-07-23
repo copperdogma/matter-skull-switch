@@ -37,15 +37,7 @@ menu "Occupancy Sensor Configuration"
             For ESP32-C3, avoid using strapping pins (GPIO 2, 8, 9) 
             and JTAG pins (GPIO 4-7).
             
-    config LED_INDICATOR_GPIO_NUM
-        int "LED Indicator GPIO Pin Number"
-        default 6 if IDF_TARGET_ESP32S3
-        default 5 if IDF_TARGET_ESP32C3
-        range 0 48
-        help
-            GPIO pin number for the LED status indicator.
-            Dim when "on", bright blinking when "motion detected".
-            Default is GPIO 6 for ESP32-S3 and GPIO 5 for ESP32-C3.
+
             
     config PIR_OCCUPIED_TO_UNOCCUPIED_DELAY_SECONDS
         int "PIR Occupied to Unoccupied Delay (seconds)"

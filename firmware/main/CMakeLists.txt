@@ -1,5 +1,5 @@
 idf_component_register(SRC_DIRS          "."
-                       SRCS              "app_main.cpp" "app_reset.cpp" "drivers/led_indicator.c"
+                       SRCS              "app_main.cpp" "app_reset.cpp"
                        INCLUDE_DIRS      "." "drivers/include"
                        PRIV_INCLUDE_DIRS "." 
                                        "drivers/include" 
