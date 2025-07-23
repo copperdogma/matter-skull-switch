@@ -21,7 +21,7 @@
 #include "app_reset.h"
 #include "utils/common_macros.h"
 
-// Button component direct include
+// Button component direct include (for factory reset only)
 #include "iot_button.h"
 #include "button_gpio.h"
 
@@ -38,8 +38,15 @@
 #include <esp_matter_event.h>
 #include <esp_console.h>
 #include <esp_vfs_dev.h>
+#include <driver/gpio.h>
+#include <esp_timer.h>
 
 static const char *TAG = "app_main";
+
+// Global variables
+static uint16_t g_switch_endpoint_id = 0;
+static uint16_t g_ui_endpoint_id = 0; // On/Off endpoint for Home UI
+static bool g_pulse_active = false;    // Track if pulse is currently active
 
 // Use the Kconfig value directly
 
@@ -48,9 +55,11 @@ using namespace esp_matter::attribute;
 using namespace esp_matter::endpoint;
 using namespace chip::app::Clusters;
 
-// Define reset button GPIO
+// Define GPIO pins
 #define BUTTON_GPIO CONFIG_BSP_BUTTON_GPIO  // GPIO 9 on ESP32-C3 SuperMini
 #define BSP_BUTTON_NUM 0
+#define SIGNAL_GPIO (gpio_num_t)4            // GPIO 4 for signal output
+#define PULSE_DURATION_MS 500               // 500ms pulse duration
 
 static void open_commissioning_window_if_necessary()
 {
@@ -103,23 +112,84 @@ static esp_err_t app_identification_cb(identification::callback_type_t type, uin
     return ESP_OK;
 }
 
+// GPIO control functions (defined before they're used)
+static esp_err_t init_signal_gpio()
+{
+    gpio_config_t io_conf = {
+        .pin_bit_mask = (1ULL << SIGNAL_GPIO),
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+    
+    esp_err_t err = gpio_config(&io_conf);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to configure GPIO %d: %s", SIGNAL_GPIO, esp_err_to_name(err));
+        return err;
+    }
+    
+    // Initialize to LOW
+    gpio_set_level(SIGNAL_GPIO, 0);
+    ESP_LOGI(TAG, "Signal GPIO %d initialized", SIGNAL_GPIO);
+    return ESP_OK;
+}
+
+static void start_pulse()
+{
+    if (g_pulse_active) {
+        ESP_LOGW(TAG, "Pulse already active, ignoring");
+        return;
+    }
+    
+    g_pulse_active = true;
+    gpio_set_level(SIGNAL_GPIO, 1);
+    ESP_LOGI(TAG, "Pulse started - GPIO %d HIGH", SIGNAL_GPIO);
+    
+    // Schedule pulse end
+    esp_timer_create_args_t timer_args = {
+        .callback = [](void* arg) {
+            gpio_set_level(SIGNAL_GPIO, 0);
+            g_pulse_active = false;
+            ESP_LOGI(TAG, "Pulse ended - GPIO %d LOW", SIGNAL_GPIO);
+        },
+        .arg = nullptr,
+        .name = "pulse_timer"
+    };
+    
+    esp_timer_handle_t timer;
+    esp_timer_create(&timer_args, &timer);
+    esp_timer_start_once(timer, PULSE_DURATION_MS * 1000); // Convert to microseconds
+}
+
+static void stop_pulse()
+{
+    gpio_set_level(SIGNAL_GPIO, 0);
+    g_pulse_active = false;
+    ESP_LOGI(TAG, "Pulse stopped - GPIO %d LOW", SIGNAL_GPIO);
+}
+
 // This callback is called for every attribute update. The callback implementation shall
 // handle the desired attributes and return an appropriate error code. If the attribute
 // is not of your interest, please do not return an error code and strictly return ESP_OK.
 static esp_err_t app_attribute_update_cb(attribute::callback_type_t type, uint16_t endpoint_id, uint32_t cluster_id,
                                          uint32_t attribute_id, esp_matter_attr_val_t *val, void *priv_data)
 {
-    if (type == PRE_UPDATE) { // Or POST_UPDATE, depending on when you want to see the value
-        if (cluster_id == OccupancySensing::Id && attribute_id == OccupancySensing::Attributes::PIROccupiedToUnoccupiedDelay::Id) {
-            ESP_LOGW(TAG, "app_attribute_update_cb: PIROccupiedToUnoccupiedDelay update received for ep %u. New value: %u (type: %d)", 
-                     endpoint_id, val->val.u16, val->type);
-        } else if (cluster_id == OccupancySensing::Id) {
-             ESP_LOGI(TAG, "app_attribute_update_cb: OccupancySensing cluster (ID: %lu) attribute (ID: %lu) update for ep %u. Value type: %d", 
-                     cluster_id, attribute_id, endpoint_id, val->type);
+    if (type == PRE_UPDATE) {
+        // Handle On/Off cluster commands
+        if (cluster_id == OnOff::Id && attribute_id == OnOff::Attributes::OnOff::Id) {
+            bool new_state = val->val.b;
+            ESP_LOGI(TAG, "On/Off command received: %s", new_state ? "ON" : "OFF");
+            
+            if (new_state) {
+                // Matter "ON" command - start pulse
+                start_pulse();
+            } else {
+                // Matter "OFF" command - stop pulse immediately
+                stop_pulse();
+            }
         }
     }
-    // Since this is just a sensor and we don't expect any writes on our temperature sensor,
-    // so, return success.
     return ESP_OK;
 }
 
@@ -156,128 +226,13 @@ static esp_err_t factory_reset_button_register()
 /* Generic Switch button callback                                             */
 /* -------------------------------------------------------------------------- */
 
-static uint16_t g_switch_endpoint_id = 0;
-static uint16_t g_ui_endpoint_id = 0; // On/Off endpoint for Home UI
-
-static void switch_button_event(void *btn_handle, void *usr_data)
-{
-    ESP_LOGI(TAG, "Generic Switch: Button pressed (GPIO 4)");
 
 
 
-    // Update Switch cluster CurrentPosition attribute (toggle 0/1)
-    attribute_t * attr = attribute::get(g_switch_endpoint_id, chip::app::Clusters::Switch::Id,
-                                        chip::app::Clusters::Switch::Attributes::CurrentPosition::Id);
-    if (attr) {
-        esp_matter_attr_val_t val = esp_matter_invalid(NULL);
-        attribute::get_val(attr, &val);
-        val.val.u8 = (val.val.u8 == 0) ? 1 : 0;
-        attribute::update(g_switch_endpoint_id, chip::app::Clusters::Switch::Id,
-                          chip::app::Clusters::Switch::Attributes::CurrentPosition::Id, &val);
-    }
-}
 
-static esp_err_t register_switch_button()
-{
-    button_config_t cfg = {
-        .long_press_time = 1000,
-        // 150 ms threshold so typical human clicks count as "short" for single/double-click detection
-        .short_press_time = 150,
-    };
+// Physical button handling removed - GPIO control is now via Matter commands only
 
-    button_gpio_config_t gpio_cfg = {
-        .gpio_num = 4,          // GPIO 4 wired to push-button
-        .active_level = 0,      // Active-low (internal pull-up)
-        .enable_power_save = false,
-        .disable_pull = false,
-    };
-
-    button_handle_t hbtn = NULL;
-    if (iot_button_new_gpio_device(&cfg, &gpio_cfg, &hbtn) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to create generic-switch button device");
-        return ESP_FAIL;
-    }
-
-    // Register callbacks mapped to Matter Switch Events
-
-    // Helper lambda to bind specific event type
-    auto reg = [&](button_event_t ev, button_cb_t fn) {
-        iot_button_register_cb(hbtn, ev, NULL, fn, NULL);
-    };
-
-    using namespace esp_matter::cluster::switch_cluster::event;
-
-    reg(BUTTON_PRESS_DOWN, [](void*, void*) {
-        chip::DeviceLayer::StackLock lock;
-        send_initial_press(g_switch_endpoint_id, 1);
-    });
-
-    reg(BUTTON_PRESS_UP, [](void*, void*) {
-        ESP_LOGI(TAG, "Generic Switch: Short press");
-        {
-            chip::DeviceLayer::StackLock lock;
-            // Send event
-            send_short_release(g_switch_endpoint_id, 1);
-
-            // Toggle CurrentPosition attribute (0/1)
-            attribute_t * attr = attribute::get(g_switch_endpoint_id, chip::app::Clusters::Switch::Id,
-                                                chip::app::Clusters::Switch::Attributes::CurrentPosition::Id);
-            if (attr) {
-                esp_matter_attr_val_t val = esp_matter_invalid(NULL);
-                attribute::get_val(attr, &val);
-                val.val.u8 = (val.val.u8 == 0) ? 1 : 0;
-                attribute::update(g_switch_endpoint_id, chip::app::Clusters::Switch::Id,
-                                  chip::app::Clusters::Switch::Attributes::CurrentPosition::Id, &val);
-            }
-
-            // Mirror to UI OnOff attribute (toggle true/false)
-            if (g_ui_endpoint_id) {
-                attribute_t * onoff_attr = attribute::get(g_ui_endpoint_id, chip::app::Clusters::OnOff::Id,
-                                                         chip::app::Clusters::OnOff::Attributes::OnOff::Id);
-                if (onoff_attr) {
-                    esp_matter_attr_val_t oval = esp_matter_invalid(NULL);
-                    attribute::get_val(onoff_attr, &oval);
-                    oval.val.b = !oval.val.b;
-                    attribute::update(g_ui_endpoint_id, chip::app::Clusters::OnOff::Id,
-                                      chip::app::Clusters::OnOff::Attributes::OnOff::Id, &oval);
-                }
-            }
-        }
-
-    });
-
-    reg(BUTTON_LONG_PRESS_START, [](void*, void*) {
-        ESP_LOGI(TAG, "Generic Switch: Long press start");
-        {
-            chip::DeviceLayer::StackLock lock;
-            send_long_press(g_switch_endpoint_id, 1);
-        }
-    });
-
-    reg(BUTTON_LONG_PRESS_UP, [](void*, void*) {
-        {
-            chip::DeviceLayer::StackLock lock;
-            send_long_release(g_switch_endpoint_id, 1);
-        }
-    });
-
-    reg(BUTTON_DOUBLE_CLICK, [](void*, void*) {
-        ESP_LOGI(TAG, "Generic Switch: Double click");
-        {
-            chip::DeviceLayer::StackLock lock;
-            send_multi_press_complete(g_switch_endpoint_id, 1, 2);
-        }
-    });
-
-    {
-        esp_matter_attr_val_t max_val = esp_matter_uint8(2);
-        attribute::update(g_switch_endpoint_id, chip::app::Clusters::Switch::Id,
-                          chip::app::Clusters::Switch::Attributes::MultiPressMax::Id,
-                          &max_val);
-    }
-
-    return ESP_OK;
-}
+// Button registration removed - GPIO control is now via Matter commands only
 
 // Simple factory reset trigger - will reset after 10 seconds
 static void trigger_factory_reset_timer(void)
@@ -335,6 +290,10 @@ extern "C" void app_main()
     esp_err_t err = factory_reset_button_register();
     ABORT_APP_ON_FAILURE(ESP_OK == err, ESP_LOGE(TAG, "Failed to initialize reset button, err:%d", err));
 
+    /* Initialize signal GPIO */
+    err = init_signal_gpio();
+    ABORT_APP_ON_FAILURE(ESP_OK == err, ESP_LOGE(TAG, "Failed to initialize signal GPIO, err:%d", err));
+
 
 
     /* Create a Matter node and add the mandatory Root Node device type on endpoint 0 */
@@ -362,12 +321,12 @@ extern "C" void app_main()
     ABORT_APP_ON_FAILURE(node != nullptr, ESP_LOGE(TAG, "Failed to create Matter node"));
 
     // ------------------------------------------------------------------
-    // Create Generic Switch endpoint
+    // Create On/Off Switch endpoint
     // ------------------------------------------------------------------
 
-    endpoint::generic_switch::config_t switch_cfg; // default config (momentary, 2 positions)
-    endpoint_t *switch_ep = endpoint::generic_switch::create(node, &switch_cfg, ENDPOINT_FLAG_NONE, NULL);
-    ABORT_APP_ON_FAILURE(switch_ep != nullptr, ESP_LOGE(TAG, "Failed to create generic_switch endpoint"));
+    endpoint::on_off_switch::config_t switch_cfg; // default config
+    endpoint_t *switch_ep = endpoint::on_off_switch::create(node, &switch_cfg, ENDPOINT_FLAG_NONE, NULL);
+    ABORT_APP_ON_FAILURE(switch_ep != nullptr, ESP_LOGE(TAG, "Failed to create on_off_switch endpoint"));
 
     g_switch_endpoint_id = endpoint::get_id(switch_ep);
 
@@ -387,9 +346,7 @@ extern "C" void app_main()
                           chip::app::Clusters::OnOff::Attributes::OnOff::Id, &off_val);
     }
 
-    // Register button on GPIO4 to drive the switch events/attributes
-    err = register_switch_button();
-    ABORT_APP_ON_FAILURE(err == ESP_OK, ESP_LOGE(TAG, "Failed to register switch button"));
+    // GPIO control is now handled via Matter commands only
 
 #if CHIP_DEVICE_CONFIG_ENABLE_THREAD
     /* Set OpenThread platform config */
