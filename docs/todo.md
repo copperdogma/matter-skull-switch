@@ -7,3 +7,4 @@
 - [ ] 90 degree male header for pins GND/3.3V/GPIO4. This will make a dupont connector simple.
 - [x] Might it be possible to set up a single esp32 to control both the skull AND be a matter controller?
   - NOT really, not due to chip limitations but bluetooth limitations. I'd be using bluetooth for A2DP, BLE, AND matter. That's just too much for one chip. I could get a separate bluetooth module but the esp32-c3 SuperMini is tiny and cheap and already has everything we need, so might as well make it discrete and simplify. That also makes the matter component a pluggable component for any other project.
+- Why does EVERY matter device I create have the exact same QR code/manual pairing code?? How are they even working? They seem to properly add to HomeKit...

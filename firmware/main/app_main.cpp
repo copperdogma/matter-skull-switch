@@ -153,10 +153,17 @@ static void start_pulse()
             g_pulse_active = false;
             ESP_LOGI(TAG, "Pulse ended - GPIO %d LOW", SIGNAL_GPIO);
             
+            // Small delay to ensure GPIO state is stable
+            vTaskDelay(pdMS_TO_TICKS(10));
+            
             // Update Matter attribute back to OFF
             esp_matter_attr_val_t val = esp_matter_bool(false);
-            attribute::update(g_switch_endpoint_id, OnOff::Id, OnOff::Attributes::OnOff::Id, &val);
-            ESP_LOGI(TAG, "Matter attribute updated to OFF");
+            esp_err_t err = attribute::update(g_switch_endpoint_id, OnOff::Id, OnOff::Attributes::OnOff::Id, &val);
+            if (err == ESP_OK) {
+                ESP_LOGI(TAG, "Matter attribute updated to OFF successfully");
+            } else {
+                ESP_LOGE(TAG, "Failed to update Matter attribute to OFF: %s", esp_err_to_name(err));
+            }
         },
         .arg = nullptr,
         .name = "pulse_timer"
@@ -193,6 +200,11 @@ static esp_err_t app_attribute_update_cb(attribute::callback_type_t type, uint16
                 // Matter "OFF" command - stop pulse immediately
                 stop_pulse();
             }
+        }
+    } else if (type == POST_UPDATE) {
+        // Handle post-update to ensure HomeKit gets the final state
+        if (cluster_id == OnOff::Id && attribute_id == OnOff::Attributes::OnOff::Id) {
+            ESP_LOGI(TAG, "Post-update: On/Off attribute updated to %s", val->val.b ? "ON" : "OFF");
         }
     }
     return ESP_OK;
