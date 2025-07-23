@@ -33,7 +33,7 @@ Create a reliable, Matter-compatible On/Off Switch using ESP32-C3 SuperMini to r
   - 3.3V GPIO output capability
 
 - GPIO Signal Output:
-  - GPIO 3 configured as digital output
+  - GPIO 4 configured as digital output
   - 3.3V HIGH = "GO!" signal to animatronic
   - 0V LOW = stop/reset signal
   - Configurable pulse duration (50ms to 5000ms)
@@ -128,7 +128,7 @@ Create a reliable, Matter-compatible On/Off Switch using ESP32-C3 SuperMini to r
 
 ### Hardware Specifications
 - **Microcontroller:** ESP32-C3 SuperMini
-- **GPIO Output:** GPIO 3, 3.3V logic level
+- **GPIO Output:** GPIO 4, 3.3V logic level
 
 - **Factory Reset:** GPIO 9 (BOOT button)
 - **Power Input:** USB-C 5V
@@ -152,7 +152,7 @@ Create a reliable, Matter-compatible On/Off Switch using ESP32-C3 SuperMini to r
 
 ### MVP Phase (Current)
 1. Basic On/Off switch Matter implementation
-2. GPIO 3 output control with configurable pulse duration
+2. GPIO 4 output control with configurable pulse duration
 3. USB-C power operation
 4. QR code commissioning
 5. Apple Home integration testing

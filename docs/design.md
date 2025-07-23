@@ -17,7 +17,7 @@ This document details the technical design and implementation of the ESP32-C3 Su
          |  (Wi-Fi / Matter)
          v
 [ESP32-C3 SuperMini]
-   |  GPIO3 ("GO!" signal)
+   |  GPIO4 ("GO!" signal)
    v
 [Animatronic Controller (ESP32, etc.)]
    |  Audio/Servo/Effect
@@ -27,7 +27,7 @@ This document details the technical design and implementation of the ESP32-C3 Su
 
 ### 1.2. Key Components
 - **ESP32-C3 SuperMini**: Main microcontroller, runs ESP-IDF and ESP-Matter SDK
-- **GPIO Output (GPIO 3)**: Sends 3.3V "GO!" pulse to animatronic controller
+- **GPIO Output (GPIO 4)**: Sends 3.3V "GO!" pulse to animatronic controller
 
 - **USB-C Power**: 5V input, regulated to 3.3V for logic
 - **Animatronic Controller**: Receives "GO!" signal, plays audio/animates skull
@@ -40,11 +40,11 @@ This document details the technical design and implementation of the ESP32-C3 Su
 - **Features**: Wi-Fi, BLE 5.0, 400KB SRAM, 4MB Flash
 - **Form Factor**: Compact, fits inside skull enclosure
 - **Pin Usage**:
-  - GPIO 3: Signal output ("GO!" pulse)
+  - GPIO 4: Signal output ("GO!" pulse)
   - GPIO 9: BOOT button (factory reset)
   - 3.3V, GND: Power and ground
 
-### 2.2. Signal Output (GPIO 3)
+### 2.2. Signal Output (GPIO 4)
 - **Logic Level**: 3.3V HIGH = trigger, 0V LOW = idle
 - **Connection**: Direct to animatronic controller GPIO input
 - **Cable**: JST-XH or Dupont, max 30cm inside enclosure
@@ -92,10 +92,10 @@ This document details the technical design and implementation of the ESP32-C3 Su
 
 ### 3.3. GPIO Output Logic
 - **Pulse Mode (default)**:
-  - On Matter "ON" command: GPIO 3 goes HIGH for configurable duration (default 500ms), then LOW
-  - On Matter "OFF" command: GPIO 3 goes LOW
+  - On Matter "ON" command: GPIO 4 goes HIGH for configurable duration (default 500ms), then LOW
+- On Matter "OFF" command: GPIO 4 goes LOW
 - **Toggle Mode (optional)**:
-  - GPIO 3 follows Matter switch state (ON = HIGH, OFF = LOW)
+  - GPIO 4 follows Matter switch state (ON = HIGH, OFF = LOW)
 - **Debouncing**: 10ms minimum between state changes
 - **Timing**: <100ms from Matter command to GPIO change
 

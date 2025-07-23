@@ -18,7 +18,7 @@ Smart Home App -> Matter Network -> Skull Switch -> GPIO Signal -> Animatronic C
 ```
 Skull Switch (ESP32-C3)      Animatronic Controller (ESP32)
 +-------------------+        +------------------------+
-| GPIO3 (Signal) ---+--------+---> GPIO4 (Input)     |
+| GPIO4 (Signal) ---+--------+---> GPIO3 (Input)     |
 | GND            ---+--------+---> GND               |
 | 3.3V (optional) --+--------+---> VCC (if needed)   |
 +-------------------+        +------------------------+
@@ -28,7 +28,7 @@ Skull Switch (ESP32-C3)      Animatronic Controller (ESP32)
 ```
 Skull Switch                 Optocoupler              Animatronic Controller
 +------------+              +------------+            +------------------+
-| GPIO3 -----|--[220Ω]-----|---> GPIO4  |            |                  |
+| GPIO4 -----|--[220Ω]-----|---> GPIO3  |            |                  |
 |            |              |            |     +------|---> GPIO4        |
 | GND -------|--------------|---> GND    |     |      |                  |
 +------------+              |            |  Collector |                  |
@@ -107,7 +107,7 @@ void loop() {
 ### Skull Switch Configuration (ESP32-C3)
 ```cpp
 // GPIO output control
-const int SIGNAL_PIN = 3;   // GPIO3 output to animatronic
+const int SIGNAL_PIN = 4;   // GPIO4 output to animatronic
 const int PULSE_DURATION = 500; // 500ms pulse
 
 void onMatterSwitchOn() {
@@ -126,7 +126,7 @@ void onMatterSwitchOff() {
 ### Pulse Mode (Default)
 ```
 Matter "ON" Command:
-GPIO3: _____/‾‾‾‾‾\_____
+GPIO4: _____/‾‾‾‾‾\_____
        0ms  100ms 600ms
 
 Animatronic Response:
@@ -137,8 +137,8 @@ Action: _______/‾‾‾‾‾‾‾‾‾‾‾‾\_____
 
 ### Toggle Mode (Optional)
 ```
-Matter "ON":  GPIO3 goes HIGH and stays HIGH
-Matter "OFF": GPIO3 goes LOW
+Matter "ON":  GPIO4 goes HIGH and stays HIGH
+Matter "OFF": GPIO4 goes LOW
 
 Use for continuous effects or state-based animations
 ```
@@ -281,7 +281,7 @@ uint8_t getBatteryPercentage() {
 
 ### Signal Testing
 ```bash
-# Using multimeter on GPIO3 pin
+# Using multimeter on GPIO4 pin
 # Should read 0V normally, 3.3V during pulse
 ```
 

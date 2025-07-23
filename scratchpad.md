@@ -25,25 +25,25 @@ This ESP32-C3 SuperMini-based Matter switch serves as a wireless trigger for ani
 
 **Final Hardware:**
 *   **Microcontroller:** ESP32-C3 SuperMini
-*   **Signal Output:** GPIO 3 (3.3V output to animatronic controller)
+*   **Signal Output:** GPIO 4 (3.3V output to animatronic controller)
 
 *   **Power:** USB-C 5V input (future: LiPo battery with TP4056 charging)
 
 **Pin Configuration:**
 
-*   **GPIO Signal Output (`SIGNAL_GPIO_NUM`):** GPIO 3
+*   **GPIO Signal Output (`SIGNAL_GPIO_NUM`):** GPIO 4
 
 *   **Factory Reset:** GPIO 9 (BOOT button, built-in)
 
 **Connections to Animatronic Controller:**
 
-1.  **Signal Line**: ESP32-C3 GPIO 3 -> Animatronic Controller GPIO input
+1.  **Signal Line**: ESP32-C3 GPIO 4 -> Animatronic Controller GPIO input
 2.  **Ground**: ESP32-C3 GND -> Animatronic Controller GND  
 3.  **Power (optional)**: ESP32-C3 3.3V -> Animatronic Controller VCC (if needed)
 
 **Signal Behavior:**
-*   **Matter "ON" Command:** GPIO 3 goes HIGH (3.3V) for configured duration (default 500ms)
-*   **Matter "OFF" Command:** GPIO 3 goes LOW (0V)
+*   **Matter "ON" Command:** GPIO 4 goes HIGH (3.3V) for configured duration (default 500ms)
+*   **Matter "OFF" Command:** GPIO 4 goes LOW (0V)
 *   **Pulse Mode:** Sends pulse when activated, returns to LOW
 *   **Toggle Mode:** GPIO state follows Matter switch state
 
@@ -60,9 +60,9 @@ This ESP32-C3 SuperMini-based Matter switch serves as a wireless trigger for ani
 
 | Signal | ESP32-C3 Pin | Notes |
 |--------|--------------|-------|
-| Signal Output | GPIO 3 | 3.3V pulse to animatronic controller |
+| Signal Output | GPIO 4 | 3.3V pulse to animatronic controller |
 
-| Animatronic Signal | GPIO 3 | Connected to animatronic GPIO input |
+| Animatronic Signal | GPIO 4 | Connected to animatronic GPIO input |
 | Shared Ground | GND | Common ground with animatronic |
 
 ---
@@ -83,7 +83,7 @@ This ESP32-C3 SuperMini-based Matter switch serves as a wireless trigger for ani
 
 ### Implementation Notes
 
-1. **GPIO Output Control:** Main functionality is Matter on/off commands controlling GPIO 3 output
+1. **GPIO Output Control:** Main functionality is Matter on/off commands controlling GPIO 4 output
 2. **Signal Timing:** Configurable pulse duration (50ms to 5000ms), default 500ms
 3. **Network Latency:** Target <500ms from app tap to GPIO activation
 4. **Multiple Devices:** Each skull needs unique certificates and commissioning

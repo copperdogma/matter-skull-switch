@@ -18,7 +18,7 @@
          |                     5V -+     NC     |                      |
          |                         |            |                      |
          |                         |   SIGNAL   |                      |
-         |                   GPIO3 -+------+----+--> GPIO_IN (e.g. GPIO4)
+         |                   GPIO4 -+------+----+--> GPIO_IN (e.g. GPIO3)
          |                         |      |    |                      |
          |      SKULL SWITCH       |      |    |    SKULL AUDIO       |
          |      (Matter Device)    |      |    |    CONTROLLER        |
@@ -37,8 +37,8 @@
          +-------------------------+                                   
 
          Signal Levels:
-         GPIO3 HIGH (3.3V) = "GO!" signal
-         GPIO3 LOW  (0V)    = Stop/Reset signal
+         GPIO4 HIGH (3.3V) = "GO!" signal
+GPIO4 LOW  (0V)    = Stop/Reset signal
 ```
 
 ### Signal Connection Options
@@ -46,7 +46,7 @@
 #### Option 1: JST-XH Connector (Recommended)
 ```
 ESP32-C3 Pin    JST-XH Wire Color    Animatronic Controller
-GPIO 3       -> Red (Signal)      -> GPIO Input Pin
+GPIO 4       -> Red (Signal)      -> GPIO Input Pin
 GND          -> Black (Ground)    -> GND
 3.3V         -> White (Power)     -> VCC (if needed)
 ```
@@ -54,13 +54,13 @@ GND          -> Black (Ground)    -> GND
 #### Option 2: Dupont Connectors
 ```
 ESP32-C3 Pin    Dupont Wire       Animatronic Controller
-GPIO 3       -> Signal Wire   -> GPIO Input Pin
+GPIO 4       -> Signal Wire   -> GPIO Input Pin
 GND          -> Ground Wire   -> GND
 ```
 
 ### Pin Connections
 
-1. **Signal Output (GPIO 3):**
+1. **Signal Output (GPIO 4):**
    - **Function**: "GO!" signal to animatronic controller
    - **Logic Level**: 3.3V HIGH = trigger, 0V LOW = stop/reset
    - **Signal Type**: Digital output, configurable pulse or toggle mode
@@ -77,11 +77,11 @@ GND          -> Ground Wire   -> GND
 
 ```
 Matter "ON" Command:
-    App Tap -> WiFi -> ESP32-C3 -> GPIO3
+    App Tap -> WiFi -> ESP32-C3 -> GPIO4
     |          |       |          |
     0ms       50ms    100ms     100ms
                                
-GPIO3 Signal:
+GPIO4 Signal:
     ____                    ____
         |                  |
         |   500ms pulse    |
@@ -96,7 +96,7 @@ Animatronic Response:
 
 ### Notes:
 - **Power Supply**: System powered via ESP32-C3 SuperMini's USB-C port
-- **Signal Logic**: GPIO 3 outputs HIGH (3.3V) for "GO!" signal, LOW (0V) for stop/reset
+- **Signal Logic**: GPIO 4 outputs HIGH (3.3V) for "GO!" signal, LOW (0V) for stop/reset
 - **Pulse Mode**: Default 500ms pulse when Matter switch turned "ON"
 - **Toggle Mode**: GPIO follows Matter switch state (ON = HIGH, OFF = LOW)
 - **BOOT Button**: Built-in on GPIO 9, used for factory reset (hold 5+ seconds)

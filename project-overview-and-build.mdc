@@ -45,14 +45,14 @@ matter-skull-switch/
 **Hardware Configuration:**
 
 The skull switch uses these GPIO connections:
-*   **GPIO 3:** Signal output to animatronic controller ("GO!" pulse)
+*   **GPIO 4:** Signal output to animatronic controller ("GO!" pulse)
 
 *   **GPIO 9:** BOOT button for factory reset (built-in)
 *   **3.3V/GND:** Power and ground connections
 
 **Signal Behavior:**
-*   **Matter "ON" Command:** GPIO 3 goes HIGH (3.3V), triggering the animatronic device
-*   **Matter "OFF" Command:** GPIO 3 goes LOW (0V), stopping/resetting the signal
+*   **Matter "ON" Command:** GPIO 4 goes HIGH (3.3V), triggering the animatronic device
+*   **Matter "OFF" Command:** GPIO 4 goes LOW (0V), stopping/resetting the signal
 *   **Pulse Mode:** Configurable pulse duration (default 500ms)
 
 **Building the Project:**
@@ -91,7 +91,7 @@ Before any `idf.py` commands will work in a new terminal session, you **MUST** a
 For the animatronic skull control functionality:
 *   **Device Type:** On/Off Switch (not Generic Switch)
 *   **Clusters:** Basic, Identify, On/Off (Power Source for future battery support)
-*   **GPIO Output:** Configured as output on GPIO 3
+*   **GPIO Output:** Configured as output on GPIO 4
 *   **Signal Logic:** HIGH = "GO!" signal, LOW = stop/reset
 *   **Matter Integration:** Standard on/off commands trigger GPIO state changes
 

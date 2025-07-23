@@ -41,7 +41,7 @@ https://project-chip.github.io/connectedhomeip/qrcode.html?data=MT%3AY.K90GSY00K
 
 | ESP32-C3 Pin | Connected To | Notes                   |
 |--------------|--------------|-------------------------|
-| GPIO 3       | Signal Out   | "GO!" signal to animatronic skull ESP32 |
+| GPIO 4       | Signal Out   | "GO!" signal to animatronic skull ESP32 |
 | GPIO 9       | BOOT Button   | Factory reset (built-in) |
 | GND          | Signal GND    | Shared ground |
 | 3.3V         | Signal VCC (if needed) | Power for signal line |

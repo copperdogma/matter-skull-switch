@@ -223,14 +223,14 @@ cp factory_nvs_output/fff1_8001/{UUID}/{UUID}-partition.bin mfg_nvs.bin
 ## 6. Skull Switch Specific Configuration
 
 ### 6.1 GPIO Configuration
-The skull switch uses GPIO 3 as the output signal to the animatronic controller:
-- **GPIO 3:** Signal output ("GO!" pulse)
+The skull switch uses GPIO 4 as the output signal to the animatronic controller:
+- **GPIO 4:** Signal output ("GO!" pulse)
 
 - **GPIO 9:** BOOT button (factory reset)
 
 ### 6.2 Signal Behavior
-- **ON Command:** GPIO 3 goes HIGH (3.3V) to trigger animatronic
-- **OFF Command:** GPIO 3 goes LOW (0V) to stop/reset
+- **ON Command:** GPIO 4 goes HIGH (3.3V) to trigger animatronic
+- **OFF Command:** GPIO 4 goes LOW (0V) to stop/reset
 - **Pulse Mode:** Configurable pulse duration (default 500ms)
 
 ### 6.3 Battery Power (Future Enhancement)

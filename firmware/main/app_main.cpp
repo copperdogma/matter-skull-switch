@@ -161,7 +161,7 @@ static uint16_t g_ui_endpoint_id = 0; // On/Off endpoint for Home UI
 
 static void switch_button_event(void *btn_handle, void *usr_data)
 {
-    ESP_LOGI(TAG, "Generic Switch: Button pressed (GPIO 3)");
+    ESP_LOGI(TAG, "Generic Switch: Button pressed (GPIO 4)");
 
 
 
@@ -186,7 +186,7 @@ static esp_err_t register_switch_button()
     };
 
     button_gpio_config_t gpio_cfg = {
-        .gpio_num = 3,          // GPIO 3 wired to push-button
+        .gpio_num = 4,          // GPIO 4 wired to push-button
         .active_level = 0,      // Active-low (internal pull-up)
         .enable_power_save = false,
         .disable_pull = false,
@@ -387,7 +387,7 @@ extern "C" void app_main()
                           chip::app::Clusters::OnOff::Attributes::OnOff::Id, &off_val);
     }
 
-    // Register button on GPIO3 to drive the switch events/attributes
+    // Register button on GPIO4 to drive the switch events/attributes
     err = register_switch_button();
     ABORT_APP_ON_FAILURE(err == ESP_OK, ESP_LOGE(TAG, "Failed to register switch button"));
 
