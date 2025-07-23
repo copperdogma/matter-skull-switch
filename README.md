@@ -1,6 +1,6 @@
-# ESP32 Matter Generic Switch
+# ESP32-C3 SuperMini Matter Skull Switch
 
-A Matter 1.4–compatible *Generic Switch* built with the ESP32-C3 SuperMini and a single momentary push-button on GPIO 3. The device exposes the **Generic Switch** device type defined in the Matter 1.4 specification [“Switches and Controls → Generic Switch”](https://handbook.buildwithmatter.com/howitworks/devicetypes/#generic-switch) and integrates seamlessly with Apple Home, Google Home, and Amazon Alexa.
+A Matter 1.4–compatible *On/Off Switch* built with the ESP32-C3 SuperMini that controls animatronic skulls and other Halloween effects. When turned "on" via Matter (Apple Home, Google Home, Amazon Alexa), the device sends a GPIO "GO!" signal to trigger an effect on connected animatronic devices.
 
 ## Quick Reference
 
@@ -20,33 +20,45 @@ https://project-chip.github.io/connectedhomeip/qrcode.html?data=MT%3AY.K90GSY00K
 
 ## Features
 
-- **Momentary Push-Button:** Maps to *Generic Switch* endpoint 1, press and release events are reported via the Switch Events cluster.
-- **Matter 1.4 Protocol:** Works with all major smart-home controllers (Apple Home, Google Home, Amazon Alexa).
-- **Secure Commissioning:** On-device QR code and manual pairing code for easy setup.
-- **Power:** USB-C powered for continuous operation.
-- **LED Status (optional):** Visual feedback for device status (e.g., power, button press, commissioning).
+- **Matter On/Off Switch:** Exposes a standard on/off switch controllable via Apple Home, Google Home, and Amazon Alexa
+- **GPIO Control Signal:** Sends a "GO!" pulse signal to connected animatronic devices when switched "on"
+- **Matter 1.4 Protocol:** Works with all major smart-home controllers
+- **Secure Commissioning:** On-device QR code and manual pairing code for easy setup
+- **Battery Monitoring (Future):** Plans for LiPo battery level reporting via Matter Power Source cluster
+- **Compact Design:** Fits inside animatronic skulls alongside other electronics
 
 ## Hardware Components
 
 | Component | Details |
 |-----------|---------|
 | **ESP32-C3 SuperMini** | Single-core 160 MHz, 400KB SRAM, 4MB Flash, Wi-Fi, BLE 5.0 |
-| **Momentary Push-Button** | Normally-open push-button, debounced in software |
+| **GPIO Output Signal** | Triggers connected animatronic devices |
+| **Status LED (optional)** | Visual feedback for device status |
 
 ## Hardware Connections
 
 ### ESP32-C3 SuperMini Connections
 
-| ESP32-C3 Pin | Component Pin | Notes                   |
-|--------------|---------------|-------------------------|
-| GND          | Button GND    |                         |
-| 5V/3.3V      | Button VCC    |                         |
-| GPIO 3       | Switch Signal | Active-high when button pressed |
-| GPIO 5       | LED Anode (+) | Through 220 Ω resistor   (optional) |
+| ESP32-C3 Pin | Connected To | Notes                   |
+|--------------|--------------|-------------------------|
+| GPIO 3       | Signal Out   | "GO!" signal to animatronic skull ESP32 |
+| GPIO 5       | LED Anode (+) | Through 220 Ω resistor (optional) |
 | GPIO 9       | BOOT Button   | Factory reset (built-in) |
-| GND          | LED Cathode (-)|                         |
+| GND          | LED Cathode (-) / Signal GND | Shared ground |
+| 3.3V         | Signal VCC (if needed) | Power for signal line |
 
-*For a detailed wiring diagram, see [docs/circuit_diagram.md](docs/circuit_diagram.md)*
+*The GPIO signal triggers the connected animatronic device to play a random audio file*
+
+## Project Purpose
+
+This device serves as a Matter-enabled remote trigger for animatronic Halloween decorations:
+
+1. **Matter Controller** (Apple Home, etc.) sends "turn on" command
+2. **ESP32-C3 SuperMini** receives command and activates GPIO output
+3. **Connected Animatronic Device** receives "GO!" signal and plays random audio
+4. **Matter Switch** can be turned "off" to stop/reset the system
+
+The ESP32-C3 sits inside the skull along with the main animatronic controller, providing wireless Matter control for the Halloween display.
 
 ## Setup & Development
 
@@ -73,7 +85,7 @@ https://project-chip.github.io/connectedhomeip/qrcode.html?data=MT%3AY.K90GSY00K
 ## Project Structure
 
 ```
-matter-generic-switch/
+matter-skull-switch/
 ├── credentials/              # Certificates and factory data
 ├── docs/                     # Documentation
 ├── firmware/                 # ESP32 firmware source code
@@ -85,12 +97,16 @@ matter-generic-switch/
 
 ## Key Implementation Notes
 
-### Default Configuration
-The Generic Switch exposes a single stateless switch on endpoint 1 with the following default configuration:
-* **Switch Type:** Momentary
-* **Number of Positions:** 2 (pressed / released)
-* **Current Position:** 0 (released)
-* **Switch Latency:** < 10 ms (software debounce)
+### GPIO Signal Behavior
+- **"ON" Command:** GPIO pin goes HIGH, sending "GO!" signal to animatronic controller
+- **"OFF" Command:** GPIO pin goes LOW, stopping/resetting the signal
+- **Signal Duration:** Configurable pulse duration (default: 500ms pulse)
+- **Signal Voltage:** 3.3V logic level
+
+### Matter Device Configuration
+- **Device Type:** On/Off Switch
+- **Endpoint:** Single endpoint with On/Off cluster
+- **Power Source:** Reports battery level when LiPo power is implemented
 
 ### Commissioning Tips
 1. **Always use the current QR/manual codes** printed to the serial monitor after flashing.
@@ -101,9 +117,9 @@ The Generic Switch exposes a single stateless switch on endpoint 1 with the foll
    - Re-commission using the same codes (QR codes don't change after factory reset).
 
 ### Apple Home Integration Notes
-* Apple Home may briefly display "No Code Needed" if the device was recently removed and re-added.
-* **UI quirk:** as of iOS 17 Apple Home hasn't added a dedicated tile for the Matter *Generic Switch* device-type. The accessory therefore appears with the generic name "Accessory" and a grey icon. Automations still receive the correct *Switch Events* (e.g. "Button 1 Pressed", "Released").
-* Switch Events appear in automations as "Button 1 Pressed" / "Released."
+* The device appears as a standard on/off switch in Apple Home
+* Can be included in scenes and automations
+* Multiple skull switches can be grouped for synchronized effects
 
 ### Factory Reset
 
@@ -122,18 +138,21 @@ The Generic Switch exposes a single stateless switch on endpoint 1 with the foll
 - **Keeps the same QR/manual codes** (this is correct behavior)
 - Device will restart and be ready for new commissioning
 
-### Known Limitations
+### Future Enhancements
 
-1. Some non-critical console warnings appear during operation but don't affect functionality.
-2. The device has been primarily tested with Apple Home; integration with other Matter controllers may require additional validation.
+1. **Battery Power:** LiPo battery with USB-C charging and battery level reporting
+2. **Scene Control:** Implement scene cluster for multiple trigger types
+3. **Multiple GPIO Outputs:** Control multiple animatronic devices from one switch
+4. **Pulse Patterns:** Different signal patterns for different effects
 
 ## Technical Specifications
 
 - **Matter Version:** 1.4 (Universal smart home compatibility)
 - **Microcontroller:** ESP32-C3 SuperMini (160 MHz, 400KB SRAM, 4MB Flash)
-- **Input:** Single momentary push-button (GPIO 3)
+- **Output:** GPIO signal to animatronic controller
 - **Connectivity:** Wi-Fi 802.11 b/g/n, Bluetooth 5.0 LE
 - **Development:** ESP-IDF v5.4.1, ESP-Matter SDK
+- **Signal Level:** 3.3V logic
 
 ## Troubleshooting
 
@@ -144,10 +163,10 @@ The Generic Switch exposes a single stateless switch on endpoint 1 with the foll
 - Remove device from Apple Home completely
 - Re-add using the same QR code (codes don't change after factory reset)
 
-**Button not responding:**
-- Ensure you're using GPIO 9 (BOOT button), not GPIO 0
-- Check button wiring and connections
-- Verify firmware is flashed correctly
+**GPIO signal not working:**
+- Check wiring between ESP32-C3 and animatronic controller
+- Verify signal voltage levels (3.3V expected)
+- Test with multimeter or oscilloscope
 
 **Commissioning fails:**
 - Check Wi-Fi credentials and network connectivity
@@ -159,10 +178,19 @@ The Generic Switch exposes a single stateless switch on endpoint 1 with the foll
 - Kill any existing monitor processes: `pkill -f monitor`
 - Try different USB port
 
+## Multiple Device Setup
+
+For controlling multiple animatronic figures:
+1. Flash each ESP32-C3 with unique device identifiers
+2. Commission each device separately in Apple Home
+3. Group devices in scenes for synchronized effects
+4. Each device can trigger its own animatronic controller independently
+
 ## References
 
 - **ESP32-C3 SuperMini:** [Pinout and specifications](https://github.com/sidharthmohannair/Tutorial-ESP32-C3-Super-Mini)
-- **Matter Protocol:** [Matter 1.4 Specification](https://csa-iot.org/all-solutions/matter/) - see also the [Generic Switch device type](https://handbook.buildwithmatter.com/howitworks/devicetypes/#generic-switch)
+- **Matter Protocol:** [Matter 1.4 Specification](https://csa-iot.org/all-solutions/matter/)
+- **Animatronic Integration:** See docs/skull-integration.md for detailed wiring
 
 ## Author
 

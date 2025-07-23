@@ -1,392 +1,182 @@
-# ESP32 Matter Generic Switch Design
+# ESP32-C3 Matter Skull Switch – Design Document
 
-> **Migration Notice (2025-06-21):** This document is being transitioned from an occupancy-sensor design to a **Generic Switch** design.  Many sections below still reference the PIR sensor implementation and will be rewritten in a subsequent editing pass.  For the most up-to-date overview, refer to the README.  
-
-20250116: Created by Cam Marsollier with Claude Sonnet 3.5
-20250117: Updated by Cam Marsollier with Claude Sonnet 3.5 to document verified PIR sensor capabilities
-20250117: Updated by Cam Marsollier with Claude Sonnet 3.5 to simplify power management design
-20250117: Updated by Cam Marsollier with Claude Sonnet 3.5 to document Matter cluster implementation
+> **Last updated:** 2025-07-22
 
 ## Overview
-This document details the technical implementation of the ESP32 Matter Occupancy Sensor, following the requirements specified in `spec.md`.
+This document details the technical design and implementation of the ESP32-C3 SuperMini Matter Skull Switch. The goal is to meet the requirements in `spec.md` by providing a reliable, Matter-compatible On/Off switch that triggers animatronic skulls and effects via a GPIO output signal.
 
-## Architecture
-### Hardware Components
-- ESP32-C3 SuperMini
-  - Integrated Wi-Fi and Bluetooth LE 5.0
-  - 512KB SRAM for Matter stack
-  - 8MB Flash for firmware/storage
-  - Dual USB-C ports
-  - 5V and 3.3V power output capabilities
-- HC-SR501 PIR sensor
-  - Maximum sensitivity for range
-  - ~120° detection angle
-  - Optimized mounting for coverage
-  - Powered directly from ESP32's 5V pin
-  - Initial Test Results (20250117):
-    - Configuration:
-      - Sensitivity: Medium (potentiometer at middle position)
-      - Time delay: Minimum (fully counter-clockwise)
-      - Trigger mode: 'H' for repeatable triggers
-    - Signal Characteristics:
-      - Baseline: 0V (no motion)
-      - Trigger: Clean 3.3V spike on motion detection
-      - Duration: 1-2 seconds per trigger
-      - Block time: ~2.5s between triggers (built-in lockout period)
-    - Validation:
-      - Output voltage compatible with ESP32 GPIO (3.3V)
-      - Clean signal transitions with minimal noise
-      - Consistent triggering behavior
-      - Built-in debouncing via block time
-- Power Management
-  - USB-C power input (5V)
-  - Direct 5V to PIR sensor
-  - 3.3V regulated for ESP32 core and GPIO
+---
 
-### Software Stack
-- ESP-IDF v5.1+
-- Matter Protocol Integration
-  - Occupancy sensor cluster (0x0406)
-  - Standard commissioning flow
-  - SPAKE2+ security
-- Motion Detection
-  - 50ms debouncing logic
-  - 5-minute occupancy timeout
-  - False positive mitigation
+## 1. System Architecture
 
-## Implementation Phases
+### 1.1. High-Level Block Diagram
+```
+[Matter Controller]
+   (Apple Home, Google Home, Alexa)
+         |
+         |  (Wi-Fi / Matter)
+         v
+[ESP32-C3 SuperMini]
+   |  GPIO3 ("GO!" signal)
+   v
+[Animatronic Controller (ESP32, etc.)]
+   |  Audio/Servo/Effect
+   v
+[Animatronic Skull]
+```
 
-### Phase 1: Hardware Setup
-1. Component Assembly
-   - Prototype board layout
-   - Power distribution
-   - Sensor integration
-   - LED indicators
+### 1.2. Key Components
+- **ESP32-C3 SuperMini**: Main microcontroller, runs ESP-IDF and ESP-Matter SDK
+- **GPIO Output (GPIO 3)**: Sends 3.3V "GO!" pulse to animatronic controller
+- **Status LED (GPIO 5, optional)**: Visual feedback for status and activity
+- **USB-C Power**: 5V input, regulated to 3.3V for logic
+- **Animatronic Controller**: Receives "GO!" signal, plays audio/animates skull
 
-2. Power System
-   - USB-C PD implementation
-   - Voltage regulation
-   - Power stability testing
+---
 
-### Phase 2: Core Firmware
-1. Development Environment
-   - ESP-IDF setup
-   - Matter SDK configuration
-   - Debug infrastructure
+## 2. Hardware Design
 
-2. Sensor Implementation
-   - GPIO configuration
-   - Interrupt handling
-   - State management
-   - Motion processing
+### 2.1. Microcontroller: ESP32-C3 SuperMini
+- **Features**: Wi-Fi, BLE 5.0, 400KB SRAM, 4MB Flash
+- **Form Factor**: Compact, fits inside skull enclosure
+- **Pin Usage**:
+  - GPIO 3: Signal output ("GO!" pulse)
+  - GPIO 5: Status LED (optional)
+  - GPIO 9: BOOT button (factory reset)
+  - 3.3V, GND: Power and ground
 
-### Phase 3: Matter Integration
-1. Protocol Stack
-   - Core configuration
-   - Security setup
-   - Network handling
+### 2.2. Signal Output (GPIO 3)
+- **Logic Level**: 3.3V HIGH = trigger, 0V LOW = idle
+- **Connection**: Direct to animatronic controller GPIO input
+- **Cable**: JST-XH or Dupont, max 30cm inside enclosure
+- **Protection**: Pull-down resistor on animatronic side recommended
+- **Isolation (optional)**: Optocoupler for noisy environments
 
-2. Device Integration
-   - Cluster implementation
-   - Attribute management
-   - Commissioning flow
+### 2.3. Status LED (GPIO 5, optional)
+- **Anode**: GPIO 5 via 220Ω resistor
+- **Cathode**: GND
+- **Behavior**: Blinks on activity, solid for status
 
-### Phase 4: Testing & Validation
-1. Environmental Testing
-   - Light interference
-   - EMI mitigation
+### 2.4. Power System
+- **Input**: USB-C 5V
+- **Regulation**: Onboard 3.3V LDO for ESP32 and logic
+- **Current Draw**: <500mA typical
+- **Future**: LiPo battery + TP4056 charging, voltage divider for battery monitoring
 
-2. Integration Testing
-   - Range verification
-   - HomeKit compatibility
-   - Power stability
+### 2.5. Physical Installation
+- **Mounting**: 3M Dual Lock fasteners inside skull
+- **Cable Management**: Zip ties, adhesive anchors
+- **USB-C Access**: Port accessible for charging/programming
+- **LED**: Visible through hole or light pipe
 
-## Technical References
-### ESP32 Development
+---
+
+## 3. Firmware Design
+
+### 3.1. ESP-IDF & ESP-Matter SDK
+- **Framework**: ESP-IDF v5.4.1+
+- **Matter SDK**: Latest ESP-Matter release
+- **Project Structure**:
+  - `main/app_main.cpp`: Main application logic
+  - `main/`: Custom drivers, config
+  - `sdkconfig`: Project configuration
+
+### 3.2. Matter Device Type & Clusters
+- **Device Type**: On/Off Switch (0x0103)
+- **Clusters**:
+  - Basic Information (mandatory)
+  - Identify (mandatory)
+  - On/Off (core functionality)
+  - Power Source (future: battery reporting)
+- **Attributes**:
+  - OnOff.OnOff: Boolean (true = GPIO HIGH, false = GPIO LOW)
+  - Basic.VendorID: 0xFFF1
+  - Basic.ProductID: 0x8001
+  - Basic.NodeLabel: "Skull Switch"
+
+### 3.3. GPIO Output Logic
+- **Pulse Mode (default)**:
+  - On Matter "ON" command: GPIO 3 goes HIGH for configurable duration (default 500ms), then LOW
+  - On Matter "OFF" command: GPIO 3 goes LOW
+- **Toggle Mode (optional)**:
+  - GPIO 3 follows Matter switch state (ON = HIGH, OFF = LOW)
+- **Debouncing**: 10ms minimum between state changes
+- **Timing**: <100ms from Matter command to GPIO change
+
+### 3.4. Status LED Logic
+- **Blink**: On activity (signal sent)
+- **Solid**: Device ready/commissioned
+- **Off**: Device not commissioned or error
+
+### 3.5. Factory Reset
+- **Method**: Hold BOOT button (GPIO 9) for 5+ seconds
+- **Effect**: Clears pairing, Wi-Fi, and resets device
+
+### 3.6. Commissioning
+- **QR Code**: Printed to serial monitor on boot
+- **Manual Code**: Also printed for fallback
+- **Process**: Use Apple Home/Google Home/Alexa to commission
+
+### 3.7. Power Source Cluster (Future)
+- **Voltage Divider**: Monitors LiPo battery voltage via ADC
+- **Reporting**: Battery % exposed to Matter controller
+
+---
+
+## 4. Animatronic Integration
+
+### 4.1. Signal Protocol
+- **Trigger**: Rising edge (LOW to HIGH) on animatronic controller input
+- **Recommended**: Use interrupt on animatronic ESP32 for fast response
+- **Pulse Duration**: 500ms default, configurable 50ms–5000ms
+
+### 4.2. Example Animatronic Controller Code
+```cpp
+// ESP32 (Animatronic side)
+const int TRIGGER_PIN = 4; // Input from skull switch
+volatile bool triggered = false;
+
+void IRAM_ATTR onTrigger() {
+    triggered = true;
+}
+
+void setup() {
+    pinMode(TRIGGER_PIN, INPUT_PULLDOWN);
+    attachInterrupt(digitalPinToInterrupt(TRIGGER_PIN), onTrigger, RISING);
+}
+
+void loop() {
+    if (triggered) {
+        triggered = false;
+        playRandomAudio();
+        // Trigger servos, lights, etc.
+    }
+}
+```
+
+---
+
+## 5. Safety & Reliability
+- **Electrical**: Use proper connectors, ensure common ground, protect against reverse polarity
+- **EMI**: Shielded cables or optocoupler if needed
+- **Thermal**: Ensure airflow, monitor temps in enclosed spaces
+- **Testing**: Use multimeter to verify 3.3V signal, test with animatronic controller before final install
+
+---
+
+## 6. Future Enhancements
+- **Battery Power**: LiPo + Power Source cluster
+- **Multiple GPIO Outputs**: For multi-effect skulls
+- **Scene Cluster**: For advanced trigger patterns
+- **OTA Updates**: Over-the-air firmware updates
+- **Custom PCB**: For compact, robust installation
+
+---
+
+## 7. References
+- [spec.md](./spec.md) – Requirements and technical specification
+- [circuit_diagram.md](./circuit_diagram.md) – Pinout and wiring
+- [skull-integration.md](./skull-integration.md) – Animatronic integration guide
 - [ESP32-C3 SuperMini Documentation](https://github.com/sidharthmohannair/Tutorial-ESP32-C3-Super-Mini)
-  - Official manufacturer repository
-  - Contains pinout diagrams
-  - Technical specifications
-  - Last accessed: 20250117
-- [ESP32 Motion Sensor Tutorial](https://esp32io.com/tutorials/esp32-motion-sensor)
-  - HC-SR501 implementation
-  - GPIO configuration
-  - Timing parameters
-
-### Matter Protocol
-- [ESP Matter Solution](https://www.espressif.com/en/solutions/device-connectivity/esp-matter-solution)
-  - Platform requirements
-  - Development setup
-  - Security implementation
-
-- [Matter Development Guide](https://developer.espressif.com/blog/matter/)
-  - Cluster specifications
-  - Commissioning flow
-  - QR code implementation
-
-### Additional Documentation
 - [ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/index.html)
-- [Matter Specification](https://csa-iot.org/developer-resource/specifications-download-request/) 
-
-### HC-SR501 PIR Sensor Specifications
-- Operating Voltage: DC 4.5V-20V
-- Power Consumption: <65μA
-- Output: Digital pulse high (3.3V) / low (0V)
-- Trigger Mode: L=non-repeatable, H=repeatable
-- Delay Time: Adjustable 0.3s to 5min
-- Block Time: 2.5s (default)
-- Detection Range: 3-7m adjustable, up to 120° angle
-- Temperature Range: -15°C to +70°C
-- Dimensions: 32×24mm
-- Note: This sensor uses a pyroelectric sensor for motion detection only, no temperature measurement capability
-- Reference: [HC-SR501 Datasheet](https://www.mpja.com/download/31227sc.pdf) 
-
-# Design Decisions
-
-## Enclosure
-- Old HDD case: 116mm tall x 80mm wide x 21mm thick
-- HDD connector port opening on the bottom, a bit wide for USB-C but perfectly tall enough
-- two halves: metal top + 1 side, plastic bottom + 3 sides
-- QR code printed and glued to the side for comissioning
-
-## Matter Cluster Implementation
-
-### Research Findings
-- Cluster ID: OccupancySensing (0x0406)
-- Relevant Attributes:
-  - PIROccupiedToUnoccupiedDelay: Controls timeout period
-  - PIRUnoccupiedToOccupiedDelay: For immediate triggering
-  - OccupancySensorType: Set to PIR type
-  - OccupancySensorTypeBitmap: Set to PIR capability
-
-### Design Decision
-Selected Implementation:
-- Use standard Matter OccupancySensing cluster
-- Configure as PIR sensor type
-- Leverage built-in delay attributes for configuration
-- Implement persistence using Matter attribute storage
-
-### Rationale
-1. Standard Compliance:
-   - Uses official Matter cluster (0x0406)
-   - Follows Matter-defined attribute patterns
-   - Ensures compatibility with Matter controllers
-
-2. Delay Configuration:
-   - PIROccupiedToUnoccupiedDelay for 5-30 minute range
-   - PIRUnoccupiedToOccupiedDelay set to 0 for instant triggers
-   - Values persist through Matter's attribute storage
-
-3. Sensor Type Configuration:
-   - Explicitly identify as PIR sensor
-   - Proper capability reporting to controllers
-   - Enables type-specific behavior in Home app
-
-### References
-- ESP Matter Repository (commit TBD): https://github.com/espressif/esp-matter
-  - Last accessed: 20250117
-  - Key examples: sensors/main/app_main.cpp
-  - Key components: esp_matter_cluster.h, esp_matter_attribute.h
-- Matter Specification: OccupancySensing Cluster
-  - Version: TBD
-  - Key sections: Cluster ID 0x0406, PIR attributes
-
-## Occupancy Delay Configuration
-
-### Research Findings
-Based on industry research and standards:
-- Traditional delay ranges: 5-30 minutes
-- Energy code trends: Moving from 30 to 20 minute maximums
-- LED considerations: Can support shorter delays (1-5 minutes) due to reduced impact on fixture life
-- Application-specific recommendations:
-  - Restrooms: 20-30 minutes (prevent lights going out while occupied)
-  - Private offices: 15-20 minutes
-  - Corridors: 5-10 minutes
-  - Warehouses: 20-30 minutes (especially near equipment)
-
-### Design Decision
-Selected Configuration:
-- Default delay: 15 minutes
-- Configurable range: 5-30 minutes
-- Implementation: Matter-configurable attribute
-- User control: Exposed in Home app settings
-
-### Rationale
-1. Default of 15 minutes:
-   - Balances energy savings with reliable detection
-   - Common industry standard for mixed-use spaces
-   - Sufficient time to detect subtle movements
-   - Reduces false negatives in garage environment
-
-2. Configurable range:
-   - Minimum 5 minutes: Suitable for LED lighting
-   - Maximum 30 minutes: Compliant with energy codes
-   - User adjustable: Accommodates different use patterns
-
-3. Matter integration:
-   - Implement as configurable cluster attribute
-   - Persist settings across power cycles
-   - Update occupancy reporting based on current delay setting
-
-### References
-- Lighting Controls Association guidelines
-- Industry forum discussions
-- Energy code requirements 
-
-# Power Management
-
-20250117: Created by Cam Marsollier with Claude Sonnet 3.5 to document power analysis and design decisions
-
-## Requirements Analysis
-### HC-SR501 PIR Requirements:
-- Operating Voltage: DC 4.5V-20V
-- Power Consumption: <65μA
-- Digital Output: 3.3V/0V logic levels
-
-### ESP32-C3 SuperMini Power Specifications:
-- USB-C input: 5V @ 500mA maximum (2.5W)
-- Core Components:
-  - CPU at full load: ~200mA
-  - Wi-Fi active: ~100-120mA
-  - Matter stack overhead: Minimal beyond Wi-Fi usage
-  Total ESP32 consumption: ~320mA
-
-## Power Supply Considerations
-- USB-C input: 5V @ 500mA maximum (2.5W)
-
-## Design Decision
-Selected Configuration:
-- Direct 5V power from ESP32 to PIR sensor
-- Remove separate USB-C PD trigger board
-- Utilize ESP32's onboard power management
-
-### Rationale
-1. Simplified Hardware:
-   - Reduced component count
-   - Lower assembly complexity
-   - Decreased points of failure
-   - Cost reduction
-
-2. Power Requirements:
-   - System well within USB-C power specifications
-   - Adequate headroom for power fluctuations
-   - No additional regulation needed
-   - PIR's draw well within ESP32's capacity
-
-3. Reliability:
-   - Direct power connection reduces noise
-   - USB power typically very stable
-   - Fewer components to fail
-
-## Conclusions
-- System is well within USB-C power specifications
-- Adequate headroom exists for power fluctuations
-- No additional power supply or regulation needed
-- PIR sensor can be powered directly from ESP32's 5V output
-- Matter stack adds minimal overhead to existing Wi-Fi power usage
-
-## References
-- HC-SR501 Datasheet (v1.2): https://www.mpja.com/download/31227sc.pdf
-  - Last accessed: 20250117
-  - Key specs: Operating voltage, power consumption, output levels
-- ESP32-C3 SuperMini Technical Reference Manual: https://www.espressif.com/sites/default/files/documentation/esp32-c3_technical_reference_manual_en.pdf
-  - Version: 1.1
-  - Last accessed: 20250117
-  - Key sections: Power Management (Chapter 5)
-- ESP32 Hardware Design Guidelines: https://www.espressif.com/sites/default/files/documentation/esp32_hardware_design_guidelines_en.pdf
-  - Version: 3.0
-  - Last accessed: 20250117
-  - Key sections: Power Supply Design
-
-## Project Structure
-
-The project is organized into two main components, each with its own Cursor workspace but managed in a single GitHub repository:
-
-```
-esp32-matter-occupancy/              # Root directory (GitHub repository)
-├── docs/                           # Documentation workspace
-│   ├── spec.md                    # Project specifications
-│   ├── design.md                  # Technical design decisions
-│   ├── todo.md                    # Task tracking
-│   ├── CHANGELOG.md               # Project history
-│   ├── references/                # Reference materials (git-ignored)
-│   │   ├── datasheets/           # Component datasheets
-│   │   ├── specs/                # Downloaded specifications
-│   │   └── research/             # Research materials
-│   └── assets/                    # Project assets (diagrams, images)
-│
-├── firmware/                      # Firmware workspace
-│   ├── src/                      # Source code
-│   ├── include/                  # Header files
-│   ├── components/               # ESP-IDF components
-│   ├── main/                     # Main application code
-│   └── sdkconfig                 # ESP-IDF configuration
-│
-├── .gitignore                    # Git ignore rules
-└── README.md                     # Project overview
-```
-
-### Key Considerations:
-- Documentation and firmware are separate Cursor workspaces but part of the same Git repository
-- The `references/` directory is git-ignored and used for downloaded specifications, research materials, and reference implementations
-- Each workspace has its own `.cursorrules` file for specialized Cursor configuration
-- Common assets like diagrams and images are stored in `docs/assets/` and version controlled 
-
-## 1. Hardware Design
-
-### 1.1. Microcontroller: ESP32-C3 SuperMini
-
-*   **Choice:** ESP32-C3 SuperMini.
-*   **Reasoning:** The ESP32-C3 is a cost-effective System-on-Chip (SoC) with integrated Wi-Fi and Bluetooth LE 5.0. It supports ESP-IDF and has sufficient processing power and memory for a Matter application. The SuperMini form factor is compact.
-*   **Reference:** [https://github.com/sidharthmohannair/Tutorial-ESP32-C3-Super-Mini](https://github.com/sidharthmohannair/Tutorial-ESP32-C3-Super-Mini)
-
-### 1.2. Occupancy Sensor: HC-SR501 PIR Sensor
-
-*   **Choice:** HC-SR501 PIR (Passive Infrared) Sensor.
-*   **Reasoning:** Widely available, inexpensive, and simple to interface (digital output). Suitable for basic occupancy detection.
-*   **Interfacing:** The HC-SR501's `OUT` pin (digital high on detection, low otherwise) will be connected to a GPIO pin on the ESP32-C3 SuperMini. **Specifically, we will use GPIO3 on the ESP32-C3 SuperMini for the PIR sensor output.**
-    *   Power (VCC) and Ground (GND) for the HC-SR501 will also be supplied by the ESP32-C3 SuperMini board (typically 5V if available, or 3.3V if the sensor supports it and the ESP32-C3 board provides a suitable pin).
-
-### 1.3. Power
-
-*   The ESP32-C3 SuperMini board will be powered via its USB-C port.
-*   The HC-SR501 sensor will be powered from the ESP32-C3 SuperMini board's VCC/GND pins.
-
-### 1.4. LED Indicator
-
-*   A status LED will be connected to GPIO5 (default, configurable via Kconfig) for visual feedback.
-*   **Details:** See `docs/docs/led_indicator.md` for implementation and behavior.
-
-## 2. Software Design
-
-### 2.1. Firmware: ESP-IDF & ESP-Matter SDK
-
-```
-esp32-matter-occupancy/              # Root directory (GitHub repository)
-├── docs/                           # Documentation workspace
-│   ├── spec.md                    # Project specifications
-│   ├── design.md                  # Technical design decisions
-│   ├── todo.md                    # Task tracking
-│   ├── CHANGELOG.md               # Project history
-│   ├── references/                # Reference materials (git-ignored)
-│   │   ├── datasheets/           # Component datasheets
-│   │   ├── specs/                # Downloaded specifications
-│   │   └── research/             # Research materials
-│   └── assets/                    # Project assets (diagrams, images)
-│
-├── firmware/                      # Firmware workspace
-│   ├── src/                      # Source code
-│   ├── include/                  # Header files
-│   ├── components/               # ESP-IDF components
-│   ├── main/                     # Main application code
-│   └── sdkconfig                 # ESP-IDF configuration
-│
-├── .gitignore                    # Git ignore rules
-└── README.md                     # Project overview
-```
-
-### Key Considerations:
-- Documentation and firmware are separate Cursor workspaces but part of the same Git repository
-- The `references/` directory is git-ignored and used for downloaded specifications, research materials, and reference implementations
-- Each workspace has its own `.cursorrules` file for specialized Cursor configuration
-- Common assets like diagrams and images are stored in `docs/assets/` and version controlled 
+- [ESP-Matter SDK](https://github.com/espressif/esp-matter) 

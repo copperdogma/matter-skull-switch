@@ -1,84 +1,130 @@
-# Matter Generic Switch - Circuit Diagram
+# Matter Skull Switch - Circuit Diagram
 
-## ESP32-C3 SuperMini with Momentary Push-Button and Status LED
+## ESP32-C3 SuperMini with GPIO Output Signal and Optional Status LED
 
 ### Components
 - ESP32-C3 SuperMini Board
-- Momentary Push-Button (normally-open)
-- 5mm LED (Red, Green, or Blue)
-- 220Ω Resistor
-- Dupont Wires/Connectors
-- Optional: Non-conductive hot glue for stability
+- Animatronic Controller (External ESP32 or similar)
+- 5mm LED (Red, Green, or Blue) - Optional
+- 220Ω Resistor - Optional for LED
+- JST-XH 3-pin Connector or Dupont Wires
+- Optional: Non-conductive hot glue for cable strain relief
 
 ### Wiring Diagram (ASCII)
 
 ```
-                                       +---------------------+
-                                       |                     |
-                                       |    Momentary        |
-                                       |    Push-Button      |
-                                       |                     |
-                                       |  +----+----+----+   |
-                                       |  |    |    |    |   |
-                                       |  |    |    |    |   |
-                                       |  +----+----+----+   |
-                                       |    |    |    |      |
-                                       +----+----+----+------+
-                                            |    |    |       
-                                            |    |    |       
-                                          VCC  OUT  GND      
-                                            |    |    |       
-                                            |    |    |       
-          +-------------------------+       |    |    |       
-          |                         |       |    |    |       
-          |                     5V -+-------+    |    |       
-          |                         |            |    |       
-          |                   GPIO3 -+------------+   |       
-          |                         |                |       
-          |      ESP32-C3           |                |       
-          |      SuperMini          |                |       
-          |                         |                |       
-          |                         |                |       
-          |                    GND -+----------------+       
-          |                         |                        
-          |                         |                 LED    
-          |                   GPIO5 -+-------+      +----->  
-          |                         |       |      |         
-          |                         |      220Ω    |         
-          |                         |       |      |         
-          |                    GND -+---------------+         
-          |                         |                        
-          +-------------------------+                        
+          ESP32-C3 SuperMini                    Animatronic Controller
+         +-------------------------+            +----------------------+
+         |                         |            |                      |
+         |                     5V -+     NC     |                      |
+         |                         |            |                      |
+         |                         |   SIGNAL   |                      |
+         |                   GPIO3 -+------+----+--> GPIO_IN (e.g. GPIO4)
+         |                         |      |    |                      |
+         |      SKULL SWITCH       |      |    |    SKULL AUDIO       |
+         |      (Matter Device)    |      |    |    CONTROLLER        |
+         |                         |      |    |                      |
+         |                    GND -+------+----+--> GND               |
+         |                         |           |                      |
+         |                         |           +----------------------+
+         |                         |                        
+         |                         |                 LED (Optional)   
+         |                   GPIO5 -+-------+      +---> Anode (+)    
+         |                         |       |      |                   
+         |                         |      220Ω    |                   
+         |                         |       |      |                   
+         |                    GND -+-------+------+---> Cathode (-)   
+         |                         |                                   
+         |                   USB-C |  <-- 5V Power Input              
+         +-------------------------+                                   
+
+         Signal Levels:
+         GPIO3 HIGH (3.3V) = "GO!" signal
+         GPIO3 LOW  (0V)    = Stop/Reset signal
+```
+
+### Signal Connection Options
+
+#### Option 1: JST-XH Connector (Recommended)
+```
+ESP32-C3 Pin    JST-XH Wire Color    Animatronic Controller
+GPIO 3       -> Red (Signal)      -> GPIO Input Pin
+GND          -> Black (Ground)    -> GND
+3.3V         -> White (Power)     -> VCC (if needed)
+```
+
+#### Option 2: Dupont Connectors
+```
+ESP32-C3 Pin    Dupont Wire       Animatronic Controller
+GPIO 3       -> Signal Wire   -> GPIO Input Pin
+GND          -> Ground Wire   -> GND
 ```
 
 ### Pin Connections
 
-1. **Momentary Push-Button Connections:**
-   - **VCC**: Connect to ESP32-C3 SuperMini 3.3 V (or 5 V) pin
-   - **Signal**: Connect to ESP32-C3 SuperMini **GPIO 3**
-   - **GND**: Connect to ESP32-C3 SuperMini GND pin
+1. **Signal Output (GPIO 3):**
+   - **Function**: "GO!" signal to animatronic controller
+   - **Logic Level**: 3.3V HIGH = trigger, 0V LOW = stop/reset
+   - **Signal Type**: Digital output, configurable pulse or toggle mode
+   - **Connection**: Direct to animatronic controller GPIO input
 
-2. **LED Connections:**
-   - **Anode (+, longer leg)**: Connect through 220Ω resistor to ESP32-C3 SuperMini GPIO5 pin
-   - **Cathode (-, shorter leg)**: Connect to ESP32-C3 SuperMini GND pin
+2. **Status LED (Optional - GPIO 5):**
+   - **Anode (+, longer leg)**: Connect through 220Ω resistor to ESP32-C3 GPIO5
+   - **Cathode (-, shorter leg)**: Connect to ESP32-C3 GND
+   - **Function**: Shows device status and signal activity
+
+3. **Power Connections:**
+   - **USB-C**: 5V power input to ESP32-C3 SuperMini
+   - **3.3V Output**: Can power low-current animatronic circuits if needed
+   - **GND**: Shared ground between devices
+
+### Signal Timing Diagram
+
+```
+Matter "ON" Command:
+    App Tap -> WiFi -> ESP32-C3 -> GPIO3
+    |          |       |          |
+    0ms       50ms    100ms     100ms
+                               
+GPIO3 Signal:
+    ____                    ____
+        |                  |
+        |   500ms pulse    |
+        |__________________|
+        
+Animatronic Response:
+                           ____________________
+                          |                    |
+                          | Random Audio Play  |
+                          |____________________|
+```
 
 ### Notes:
-- **Power Supply**: The system is powered via the ESP32-C3 SuperMini's USB-C port
-- **Switch**: The push-button is read by GPIO 3 with internal pull-up enabled and debounced in software.
-- **Signal Logic**: GPIO 3 reads LOW when the button is pressed (active-low) and HIGH when released.
-- **BOOT Button**: Built-in on GPIO 9, used for factory reset (hold 5+ seconds, then release)
-- **LED Status**:
-  - Dim/Low brightness: System powered and ready
-  - Bright/Blinking: Button press detected or factory reset in progress
+- **Power Supply**: System powered via ESP32-C3 SuperMini's USB-C port
+- **Signal Logic**: GPIO 3 outputs HIGH (3.3V) for "GO!" signal, LOW (0V) for stop/reset
+- **Pulse Mode**: Default 500ms pulse when Matter switch turned "ON"
+- **Toggle Mode**: GPIO follows Matter switch state (ON = HIGH, OFF = LOW)
+- **BOOT Button**: Built-in on GPIO 9, used for factory reset (hold 5+ seconds)
+- **Signal Range**: Up to 30cm cable length inside skull enclosure
+- **Protection**: Consider pull-down resistor on animatronic side for noise immunity
 
 ### Assembly Tips:
-1. Use Dupont connectors for all connections for easy assembly/disassembly
-2. Consider adding a small dab of non-conductive hot glue at connector bases for stability
-3. Ensure the push-button is accessible from outside the enclosure.
-4. The LED should be visible from outside the enclosure to provide status feedback
+1. Use JST-XH connectors for reliable connections inside skull enclosures
+2. Add strain relief with heat shrink tubing or cable boots
+3. Route signal cable away from power cables to minimize interference
+4. Test signal levels with multimeter before connecting to animatronic controller
+5. Consider optocoupler isolation for noisy environments
 
-### Enclosure Considerations:
-- Old HDD enclosure provides good protection
-- Ensure a hole or clear window for the push-button
-- Small hole or light pipe for the status LED
-- Cable management for unused ESP32 pins (they can remain exposed inside the enclosure) 
+### Enclosure Integration:
+- Compact design fits inside most animatronic skull enclosures
+- USB-C port accessible for charging and programming
+- LED visible through small hole or light pipe if used
+- Secure mounting with 3M Dual Lock fasteners
+- Cable management with zip ties and adhesive anchors
+
+### Multiple Skull Setup:
+Each skull switch requires:
+- Unique Matter device certificates and identifiers
+- Independent GPIO output connection to its animatronic controller
+- Separate commissioning in Matter controller app
+- Individual or grouped control via Matter scenes 

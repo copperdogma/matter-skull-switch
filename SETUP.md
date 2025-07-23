@@ -1,4 +1,4 @@
-# ESP32 Matter Generic Switch - Development Environment Setup
+# ESP32-C3 SuperMini Matter Skull Switch - Development Environment Setup
 
 ## Quick Reference
 
@@ -83,20 +83,20 @@ which python3  # Should point to ESP-IDF Python env (~/.espressif/python_env/...
 
 ```bash
 cd /path/to/your/projects_directory
-mkdir -p matter-generic-switch/firmware-test
-cp -r ~/esp/esp-matter/examples/light/* matter-generic-switch/firmware-test/
-cd matter-generic-switch/firmware-test
+mkdir -p matter-skull-switch/firmware-test
+cp -r ~/esp/esp-matter/examples/light/* matter-skull-switch/firmware-test/
+cd matter-skull-switch/firmware-test
 idf.py set-target esp32c3
 idf.py build
 ```
 
-### 3.2 Create the Generic Switch Project
+### 3.2 Create the Skull Switch Project
 
 ```bash
 cd /path/to/your/projects_directory
-mkdir -p matter-generic-switch/firmware
-cp -r ~/esp/esp-matter/examples/sensors/* matter-generic-switch/firmware/
-cd matter-generic-switch/firmware
+mkdir -p matter-skull-switch/firmware
+cp -r ~/esp/esp-matter/examples/light/* matter-skull-switch/firmware/
+cd matter-skull-switch/firmware
 idf.py set-target esp32c3
 ```
 
@@ -107,13 +107,13 @@ Run menuconfig:
 idf.py menuconfig
 ```
 
-Apply these key settings:
+Apply these key settings for the skull switch:
 
 | Section | Setting | Value |
 |---------|---------|-------|
 | **Component config → CHIP Device Layer → Device Identification Options** | | |
 | | Device Vendor Id | 0xFFF1 |
-| | Device Product Id | 0x8000 |
+| | Device Product Id | 0x8001 |
 | | Default Device Hardware Version | 1 |
 | | Device Software Version Number | 1 |
 | | Default Device type | 22 (Root Node) |
@@ -123,11 +123,21 @@ Apply these key settings:
 | | Enable Matter Server | ✓ (Checked) |
 | | Initialize Thread Stack | ✗ (Unchecked) |
 
-Scroll farther down to **Component config → ESP Matter → Select Supported Matter Clusters** and set:
+Navigate to **Component config → ESP Matter → Select Supported Matter Clusters** and configure:
 
-The menu item lists every cluster that can be compiled into your firmware.  Leave **Basic** and **Identify** enabled (they are mandatory on the root node) and make sure **Switch** and **Switch Events** stay enabled.  You may un-check large, unused clusters (Light, Thermostat, OTA Provider, etc.) to save flash/RAM, but it is optional.
+Enable these clusters for the skull switch:
+- **Basic** (mandatory)
+- **Identify** (mandatory) 
+- **On/Off** (core functionality)
+- **Power Source** (for future battery reporting)
 
-> Device-type assignment (e.g. "Generic Switch") is done entirely in `app_main.cpp` when you call `generic_switch::create(...)`.  The menu does **not** include a "Device Types" page in recent ESP-Matter releases.
+Disable unused clusters to save flash/RAM:
+- Light clusters (Dimming, Color Control, etc.)
+- Thermostat
+- Switch Events (not needed for on/off switch)
+- Large sensor clusters
+
+> The device type (On/Off Switch) is configured in the firmware code (`app_main.cpp`), not in menuconfig.
 
 Build the project:
 ```bash
@@ -138,8 +148,8 @@ idf.py build
 
 Create a directory for certificates:
 ```bash
-mkdir -p matter-generic-switch/credentials/dev-certs
-cd matter-generic-switch/credentials/dev-certs
+mkdir -p matter-skull-switch/credentials/dev-certs
+cd matter-skull-switch/credentials/dev-certs
 ```
 
 ### 4.1 Generate Certificate Chain
@@ -147,18 +157,18 @@ cd matter-generic-switch/credentials/dev-certs
 ```bash
 # Product Attestation Authority (PAA)
 chip-cert gen-att-cert --type a -O PAA_key.pem --out PAA_cert.pem \
-  --subject-cn "Matter Test PAA" \
+  --subject-cn "Matter Skull Switch PAA" \
   --valid-from "2023-01-01 00:00:00" --lifetime 7305
 
 # Product Attestation Intermediate (PAI)
 chip-cert gen-att-cert --type i -O PAI_key.pem --out PAI_cert.pem \
-  --subject-cn "Matter Test PAI FFF1" --subject-vid 0xFFF1 \
+  --subject-cn "Matter Skull Switch PAI FFF1" --subject-vid 0xFFF1 \
   --valid-from "2023-01-01 00:00:00" --lifetime 7305 \
   --ca-key PAA_key.pem --ca-cert PAA_cert.pem
 
 # Device Attestation Certificate (DAC)
 chip-cert gen-att-cert --type d -O DAC_key.pem --out DAC_cert.pem \
-  --subject-cn "Matter Test DAC FFF18000" --subject-vid 0xFFF1 --subject-pid 0x8000 \
+  --subject-cn "Matter Skull Switch DAC FFF18001" --subject-vid 0xFFF1 --subject-pid 0x8001 \
   --valid-from "2023-01-01 00:00:00" --lifetime 7305 \
   --ca-key PAI_key.pem --ca-cert PAI_cert.pem
 ```
@@ -173,10 +183,10 @@ python3 -m pip install esp-matter-mfg-tool
 Generate the partition binary:
 ```bash
 esp-matter-mfg-tool \
-  -v 0xFFF1 -p 0x8000 \
-  --vendor-name "MyTestVendor" --product-name "GenericSwitch" \
+  -v 0xFFF1 -p 0x8001 \
+  --vendor-name "SkullTech" --product-name "SkullSwitch" \
   --hw-ver 1 --hw-ver-str "1.0.0" \
-  --mfg-date "2024-05-21" --serial-num "GSWITCH001" \
+  --mfg-date "2024-05-21" --serial-num "SKULL001" \
   --dac-key DAC_key.pem --dac-cert DAC_cert.pem \
   --pai -c PAI_cert.pem \
   --discriminator 3840 --passcode 20202021 \
@@ -186,7 +196,7 @@ esp-matter-mfg-tool \
 Copy the NVS binary:
 ```bash
 # Find the generated UUID, e.g., d6e078de-1a28-4b57-a713-be172effac1f
-cp factory_nvs_output/fff1_8000/{UUID}/{UUID}-partition.bin mfg_nvs.bin
+cp factory_nvs_output/fff1_8001/{UUID}/{UUID}-partition.bin mfg_nvs.bin
 ```
 
 ## 5. Flashing Firmware and NVS Partition
@@ -210,7 +220,26 @@ cp factory_nvs_output/fff1_8000/{UUID}/{UUID}-partition.bin mfg_nvs.bin
 
 **Bootloader Mode:** The ESP32-C3 SuperMini might require being put into bootloader mode. Typically, this involves holding down the `BOOT` button (often GPIO9), pressing and releasing the `RESET` (or `EN`) button, and then releasing the `BOOT` button.
 
-## 6. Troubleshooting
+## 6. Skull Switch Specific Configuration
+
+### 6.1 GPIO Configuration
+The skull switch uses GPIO 3 as the output signal to the animatronic controller:
+- **GPIO 3:** Signal output ("GO!" pulse)
+- **GPIO 5:** Status LED (optional)
+- **GPIO 9:** BOOT button (factory reset)
+
+### 6.2 Signal Behavior
+- **ON Command:** GPIO 3 goes HIGH (3.3V) to trigger animatronic
+- **OFF Command:** GPIO 3 goes LOW (0V) to stop/reset
+- **Pulse Mode:** Configurable pulse duration (default 500ms)
+
+### 6.3 Battery Power (Future Enhancement)
+When implementing LiPo battery power:
+- Add voltage divider to monitor battery level
+- Report battery percentage via Matter Power Source cluster
+- Implement USB-C charging with TP4056 module
+
+## 7. Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
@@ -219,10 +248,18 @@ cp factory_nvs_output/fff1_8000/{UUID}/{UUID}-partition.bin mfg_nvs.bin
 | **Submodule cloning failures** | Use force flag: `git submodule update --init --recursive --force` |
 | **Build errors in C++ code** | Try full clean: `idf.py fullclean` before rebuilding |
 | **Serial Port Not Found** | Double-check the serial port name (e.g., `/dev/tty.usbmodemXXXX`). Ensure you have the necessary USB drivers (e.g., CH340/CH341 or CP210x) |
-| **Build Errors** | Carefully read the error messages. They often point to configuration issues in `sdkconfig` or problems in the code |
-| **Flashing Fails** | Ensure the board is in bootloader mode. Check the USB cable and connection. Try a different USB port |
+| **GPIO signal not working** | Check wiring to animatronic controller. Verify 3.3V signal levels. Test with multimeter |
 | **Commissioning failures** | Factory reset: Hold BOOT button (GPIO 9) for 5+ seconds, then release <br>Remove device from Matter controller app <br>QR codes remain the same after factory reset (correct behavior) |
+
+## 8. Multiple Skull Setup
+
+For controlling multiple animatronic skulls:
+1. Generate unique certificates for each device (different serial numbers)
+2. Flash each ESP32-C3 with its own NVS partition
+3. Commission each device separately in your Matter controller
+4. Group devices in scenes for synchronized Halloween effects
 
 ## Primary Reference Documents
 - [ESP-Matter Programming Guide](https://docs.espressif.com/projects/esp-matter/en/latest/esp32/developing.html)
 - [ESP-IDF Get Started](https://docs.espressif.com/projects/esp-idf/en/v5.4.1/esp32c3/get-started/index.html)
+- [Matter On/Off Cluster Specification](https://github.com/project-chip/connectedhomeip/blob/master/src/app/clusters/on-off-server/on-off-server.cpp)
